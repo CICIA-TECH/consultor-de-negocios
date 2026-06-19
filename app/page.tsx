@@ -4,6 +4,9 @@ import { useEffect, useMemo, useState } from "react";
 import { useChat } from "@ai-sdk/react";
 import { ChatPanel } from "@/components/ChatPanel";
 import { Sidebar } from "@/components/Sidebar";
+import { MiEmpresa } from "@/components/MiEmpresa";
+import { Configuracion } from "@/components/Configuracion";
+import { DEFAULT_VIEW_ID, type ViewId } from "@/lib/navigation/config";
 import {
   isFileSystemAccessSupported,
   readDocumentsFromDirectory,
@@ -12,6 +15,7 @@ import type { DocumentItem } from "@/lib/documents/types";
 import styles from "./page.module.css";
 
 export default function Home() {
+  const [activeView, setActiveView] = useState<ViewId>(DEFAULT_VIEW_ID);
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [isLoadingFolder, setIsLoadingFolder] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
@@ -50,21 +54,29 @@ export default function Home() {
 
   return (
     <div className={styles.page}>
-      <Sidebar
-        documents={documents}
-        isLoading={isLoadingFolder}
-        isSupported={isSupported}
-        onPickFolder={handlePickFolder}
-      />
-      <ChatPanel
-        messages={messages}
-        isBusy={isBusy}
-        error={error}
-        onSendMessage={(text) =>
-          sendMessage({ text }, { body: { documentContext } })
-        }
-      />
+      <Sidebar activeView={activeView} onSelectView={setActiveView} />
+
+      {activeView === "chat" && (
+        <ChatPanel
+          messages={messages}
+          isBusy={isBusy}
+          error={error}
+          onSendMessage={(text) =>
+            sendMessage({ text }, { body: { documentContext } })
+          }
+        />
+      )}
+
+      {activeView === "empresa" && (
+        <MiEmpresa
+          documents={documents}
+          isLoading={isLoadingFolder}
+          isSupported={isSupported}
+          onPickFolder={handlePickFolder}
+        />
+      )}
+
+      {activeView === "configuracion" && <Configuracion />}
     </div>
   );
 }
-

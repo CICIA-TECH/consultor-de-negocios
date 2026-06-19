@@ -1,0 +1,110 @@
+.page {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 2rem 2.5rem;
+}
+
+.title {
+  margin: 0 0 0.4rem;
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-secondary);
+  max-width: 640px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 640px;
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.pickButton {
+  align-self: flex-start;
+  padding: 0.6rem 1rem;
+  border-radius: 6px;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  cursor: pointer;
+  font-size: 0.9rem;
+}
+
+.pickButton:hover {
+  opacity: 0.85;
+}
+
+.pickButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.warning {
+  font-size: 0.8rem;
+  color: var(--color-warning-text);
+  background: var(--color-warning-bg);
+  border-radius: 6px;
+  padding: 0.6rem;
+  margin: 0;
+}
+
+.fileList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.fileItem {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  padding: 0.4rem 0.5rem;
+  border-radius: 6px;
+  background: var(--color-surface-muted);
+}
+
+.fileName {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.statusLoaded {
+  color: var(--color-success);
+}
+
+.statusUnsupported {
+  color: var(--color-text-muted);
+}
+
+.statusError {
+  color: var(--color-danger);
+}
+
+.emptyState {
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+  margin: 0;
+}

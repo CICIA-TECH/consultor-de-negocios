@@ -1,0 +1,43 @@
+.page {
+  flex: 1;
+  height: 100vh;
+  overflow-y: auto;
+  box-sizing: border-box;
+  padding: 2rem 2.5rem;
+}
+
+.title {
+  margin: 0 0 0.4rem;
+  font-size: 1.4rem;
+  color: var(--color-text);
+}
+
+.subtitle {
+  margin: 0 0 1.5rem;
+  color: var(--color-text-secondary);
+}
+
+.card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  background: var(--color-surface-subtle);
+  border: 1px solid var(--color-border);
+  border-radius: 12px;
+  padding: 1.5rem;
+  max-width: 640px;
+}
+
+.cardTitle {
+  margin: 0 0 0.2rem;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.cardDescription {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--color-text-secondary);
+}

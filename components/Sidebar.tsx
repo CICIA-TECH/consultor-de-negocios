@@ -1,75 +1,48 @@
 "use client";
 
-import type { DocumentItem } from "@/lib/documents/types";
-import { ThemeToggle } from "./ThemeToggle";
+import { MAIN_NAV_ITEMS, FOOTER_NAV_ITEMS } from "@/lib/navigation/config";
+import type { ViewId } from "@/lib/navigation/config";
+import { NavItem } from "./NavItem";
 import styles from "./Sidebar.module.css";
 
-const STATUS_LABEL: Record<DocumentItem["status"], string> = {
-  loaded: "Cargado",
-  unsupported: "No soportado",
-  error: "Error",
-};
-
-const STATUS_CLASS: Record<DocumentItem["status"], string> = {
-  loaded: styles.statusLoaded,
-  unsupported: styles.statusUnsupported,
-  error: styles.statusError,
-};
-
 interface SidebarProps {
-  documents: DocumentItem[];
-  isLoading: boolean;
-  isSupported: boolean;
-  onPickFolder: () => void;
+  activeView: ViewId;
+  onSelectView: (id: ViewId) => void;
 }
 
-export function Sidebar({
-  documents,
-  isLoading,
-  isSupported,
-  onPickFolder,
-}: SidebarProps) {
+export function Sidebar({ activeView, onSelectView }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.header}>
-        <h2 className={styles.title}>Documentos</h2>
-        <ThemeToggle />
+      <div className={styles.brand}>
+        <span className={styles.brandMark}>C</span>
+        <span className={styles.brandName}>CICIA</span>
       </div>
 
-      {!isSupported && (
-        <p className={styles.warning}>
-          Tu navegador no soporta seleccionar carpetas locales. Usa Chrome o
-          Edge para esta función.
-        </p>
-      )}
+      <nav className={styles.nav} aria-label="Navegación principal">
+        {MAIN_NAV_ITEMS.map((item) => (
+          <NavItem
+            key={item.id}
+            item={item}
+            isActive={activeView === item.id}
+            onSelect={(id) => onSelectView(id as ViewId)}
+          />
+        ))}
+      </nav>
 
-      <button
-        className={styles.pickButton}
-        onClick={onPickFolder}
-        disabled={!isSupported || isLoading}
-      >
-        {isLoading ? "Cargando..." : "Seleccionar carpeta"}
-      </button>
+      <div className={styles.spacer} />
 
-      {documents.length === 0 ? (
-        <p className={styles.emptyState}>
-          Aún no hay documentos. Selecciona una carpeta con PDFs o archivos
-          Excel/CSV.
-        </p>
-      ) : (
-        <ul className={styles.fileList}>
-          {documents.map((doc) => (
-            <li key={doc.id} className={styles.fileItem}>
-              <span className={styles.fileName} title={doc.name}>
-                {doc.name}
-              </span>
-              <span className={STATUS_CLASS[doc.status]}>
-                {STATUS_LABEL[doc.status]}
-              </span>
-            </li>
-          ))}
-        </ul>
-      )}
+      <div className={styles.separator} />
+
+      <nav className={styles.nav} aria-label="Cuenta">
+        {FOOTER_NAV_ITEMS.map((item) => (
+          <NavItem
+            key={item.id}
+            item={item}
+            isActive={activeView === item.id}
+            onSelect={(id) => onSelectView(id as ViewId)}
+          />
+        ))}
+      </nav>
     </aside>
   );
 }
