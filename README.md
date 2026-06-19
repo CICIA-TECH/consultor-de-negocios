@@ -61,13 +61,14 @@ A partir de este principio, estructuramos nuestro trabajo en:
 ## 🛠️ Tech Stack
 
 - **Framework:** Next.js 15 (App Router).
+- **IA:** Cerebras (modelo `gpt-oss-120b`) integrado vía Vercel AI SDK (`@ai-sdk/react`, `@ai-sdk/cerebras`).
+- **Renderizado de Chat:** `marked` para parsear las respuestas Markdown del asistente a HTML con GitHub Flavored Markdown (GFM).
 - **Base de Datos & Auth:** Supabase (PostgreSQL).
-- **Almacenamiento:** Supabase Storage (documentos subidos por las empresas).
-- **IA:** Por definir.
+- **Almacenamiento:** Supabase Storage.
 - **Estilos:** Vanilla CSS.
 - **Despliegue:** Vercel.
 
-*Nota: Supabase (base de datos, auth, storage) está integrado en el proyecto pero aún no conectado al flujo del MVP — queda reservado para la Fase 2. La versión actual del MVP lee documentos desde una carpeta local del navegador y usa una respuesta de IA simulada. Ver el detalle en [docs/requerimientos-mvp.md](docs/requerimientos-mvp.md).*
+*Nota: Supabase (base de datos, auth, storage) está integrado en el proyecto pero aún no conectado al flujo del MVP — queda reservado para la Fase 2. La versión actual del MVP lee documentos desde una carpeta local del navegador.*
 
 ---
 
@@ -78,22 +79,28 @@ A partir de este principio, estructuramos nuestro trabajo en:
    npm install
    ```
 
-2. **Levantar en desarrollo:**
+2. **Configurar Variables de Entorno:**
+   Copia el archivo de ejemplo y agrega tu API key de Cerebras:
+   ```bash
+   cp .env.local.example .env.local
+   ```
+   Abre `.env.local` y agrega tu key obtenida en [cloud.cerebras.ai](https://cloud.cerebras.ai):
+   ```env
+   CEREBRAS_API_KEY=csk-tu-clave-aqui
+   ```
+
+3. **Levantar en desarrollo:**
    ```bash
    npm run dev
    ```
    Abrir [http://localhost:3000](http://localhost:3000) en **Chrome o Edge** (la selección de carpeta usa la File System Access API, no soportada en Firefox/Safari).
 
-3. **Usar el MVP:** click en "Seleccionar carpeta" y elegir una carpeta local con PDFs o archivos Excel/CSV. Luego escribir preguntas en el chat (por ahora responde con una IA simulada, ver nota en Tech Stack).
+4. **Usar el MVP:** Haz click en "Seleccionar carpeta", elige una carpeta local con PDFs o archivos Excel/CSV, y escribe tus preguntas. La IA analizará el contexto usando el modelo `gpt-oss-120b` de Cerebras.
 
-### Setup de Supabase (Fase 2, no requerido para el MVP actual)
+### Setup de Supabase (Fase 2)
 
-1. Crear un proyecto en [supabase.com](https://supabase.com) → "New Project".
-2. Copiar la `Project URL` y la `anon public key` desde Project Settings → API.
-3. Crear `.env.local` copiando el ejemplo y rellenando con esas claves:
-   ```bash
-   cp .env.local.example .env.local
-   ```
+1. Crear un proyecto en [supabase.com](https://supabase.com).
+2. Agregar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `.env.local`.
 
 ### Cómo se creó este proyecto
 
