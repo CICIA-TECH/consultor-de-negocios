@@ -1,6 +1,7 @@
 "use client";
 
 import type { DocumentItem } from "@/lib/documents/types";
+import { ThemeToggle } from "./ThemeToggle";
 import styles from "./Sidebar.module.css";
 
 const STATUS_LABEL: Record<DocumentItem["status"], string> = {
@@ -30,7 +31,10 @@ export function Sidebar({
 }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
-      <h2 className={styles.title}>Documentos</h2>
+      <div className={styles.header}>
+        <h2 className={styles.title}>Documentos</h2>
+        <ThemeToggle />
+      </div>
 
       {!isSupported && (
         <p className={styles.warning}>
