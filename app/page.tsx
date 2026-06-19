@@ -1,34 +1,40 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { ChatPanel, type ChatMessage } from "@/components/ChatPanel";
+import { useEffect, useMemo, useState } from "react";
+import { useChat } from "@ai-sdk/react";
+import { ChatPanel } from "@/components/ChatPanel";
 import { Sidebar } from "@/components/Sidebar";
 import {
   isFileSystemAccessSupported,
   readDocumentsFromDirectory,
 } from "@/lib/documents/readDirectory";
 import type { DocumentItem } from "@/lib/documents/types";
-import { getMockChatResponse } from "@/lib/ai/mockChat";
 import styles from "./page.module.css";
-
-let nextMessageId = 0;
 
 export default function Home() {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [isLoadingFolder, setIsLoadingFolder] = useState(false);
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
-  const [isSending, setIsSending] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
 
   useEffect(() => {
     setIsSupported(isFileSystemAccessSupported());
   }, []);
 
+  const documentContext = useMemo(() => {
+    return documents
+      .filter((doc) => doc.status === "loaded" && doc.content)
+      .map((doc) => `--- ${doc.name} ---\n${doc.content}`)
+      .join("\n\n");
+  }, [documents]);
+
+  const { messages, sendMessage, status, error } = useChat();
+
   async function handlePickFolder() {
     setIsLoadingFolder(true);
     try {
       const directoryHandle = await window.showDirectoryPicker();
-      const loadedDocuments = await readDocumentsFromDirectory(directoryHandle);
+      const loadedDocuments =
+        await readDocumentsFromDirectory(directoryHandle);
       setDocuments(loadedDocuments);
     } catch (error) {
       if (error instanceof DOMException && error.name === "AbortError") {
@@ -40,27 +46,7 @@ export default function Home() {
     }
   }
 
-  async function handleSendMessage(text: string) {
-    const userMessage: ChatMessage = {
-      id: `${nextMessageId++}`,
-      role: "user",
-      text,
-    };
-    setMessages((current) => [...current, userMessage]);
-    setIsSending(true);
-
-    try {
-      const responseText = await getMockChatResponse(text, documents);
-      const assistantMessage: ChatMessage = {
-        id: `${nextMessageId++}`,
-        role: "assistant",
-        text: responseText,
-      };
-      setMessages((current) => [...current, assistantMessage]);
-    } finally {
-      setIsSending(false);
-    }
-  }
+  const isBusy = status === "submitted" || status === "streaming";
 
   return (
     <div className={styles.page}>
@@ -72,9 +58,13 @@ export default function Home() {
       />
       <ChatPanel
         messages={messages}
-        isSending={isSending}
-        onSendMessage={handleSendMessage}
+        isBusy={isBusy}
+        error={error}
+        onSendMessage={(text) =>
+          sendMessage({ text }, { body: { documentContext } })
+        }
       />
     </div>
   );
 }
+
