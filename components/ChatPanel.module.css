@@ -18,7 +18,7 @@
 .emptyState {
   margin: auto;
   text-align: center;
-  color: #666;
+  color: var(--color-text-secondary);
   font-size: 0.95rem;
   max-width: 360px;
 }
@@ -34,37 +34,37 @@
 
 .user {
   align-self: flex-end;
-  background: #111;
-  color: #fff;
+  background: var(--color-primary);
+  color: var(--color-on-primary);
 }
 
 .assistant {
   align-self: flex-start;
-  background: #f0f0f0;
-  color: #111;
+  background: var(--color-surface-muted);
+  color: var(--color-text);
 }
 
 .form {
   display: flex;
   gap: 0.5rem;
   padding: 1rem 1.5rem;
-  border-top: 1px solid #e3e3e3;
+  border-top: 1px solid var(--color-border);
 }
 
 .input {
   flex: 1;
   padding: 0.6rem 0.8rem;
   border-radius: 6px;
-  border: 1px solid #ccc;
+  border: 1px solid var(--color-border-strong);
   font-size: 0.9rem;
 }
 
 .sendButton {
   padding: 0.6rem 1.2rem;
   border-radius: 6px;
-  border: 1px solid #333;
-  background: #111;
-  color: #fff;
+  border: 1px solid var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
   cursor: pointer;
   font-size: 0.9rem;
 }
