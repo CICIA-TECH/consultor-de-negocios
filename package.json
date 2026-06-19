@@ -10,8 +10,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@ai-sdk/cerebras": "^2.0.57",
+    "@ai-sdk/react": "^3.0.210",
     "@supabase/ssr": "^0.12.0",
     "@supabase/supabase-js": "^2.108.2",
+    "ai": "^6.0.208",
+    "marked": "^18.0.5",
     "next": "^15.5.19",
     "pdfjs-dist": "^6.0.227",
     "react": "19.2.4",
