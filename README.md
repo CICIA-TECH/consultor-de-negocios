@@ -67,6 +67,8 @@ A partir de este principio, estructuramos nuestro trabajo en:
 - **Estilos:** Vanilla CSS.
 - **Despliegue:** Vercel.
 
+*Nota: Supabase (base de datos, auth, storage) está integrado en el proyecto pero aún no conectado al flujo del MVP — queda reservado para la Fase 2. La versión actual del MVP lee documentos desde una carpeta local del navegador y usa una respuesta de IA simulada. Ver el detalle en [docs/requerimientos-mvp.md](docs/requerimientos-mvp.md).*
+
 ---
 
 ## ⚙️ Setup
@@ -76,22 +78,22 @@ A partir de este principio, estructuramos nuestro trabajo en:
    npm install
    ```
 
-2. **Crear el proyecto en Supabase:**
-   - Crear un proyecto en [supabase.com](https://supabase.com) → "New Project".
-   - Copiar la `Project URL` y la `anon public key` desde Project Settings → API.
-   - Crear un bucket en Storage (Storage → New Bucket) para los documentos que suban las empresas.
-
-3. **Configurar Entorno:**
-   Crear `.env.local` copiando el ejemplo y rellenando con las claves de tu proyecto Supabase:
-   ```bash
-   cp .env.local.example .env.local
-   ```
-
-4. **Levantar en desarrollo:**
+2. **Levantar en desarrollo:**
    ```bash
    npm run dev
    ```
-   Abrir [http://localhost:3000](http://localhost:3000).
+   Abrir [http://localhost:3000](http://localhost:3000) en **Chrome o Edge** (la selección de carpeta usa la File System Access API, no soportada en Firefox/Safari).
+
+3. **Usar el MVP:** click en "Seleccionar carpeta" y elegir una carpeta local con PDFs o archivos Excel/CSV. Luego escribir preguntas en el chat (por ahora responde con una IA simulada, ver nota en Tech Stack).
+
+### Setup de Supabase (Fase 2, no requerido para el MVP actual)
+
+1. Crear un proyecto en [supabase.com](https://supabase.com) → "New Project".
+2. Copiar la `Project URL` y la `anon public key` desde Project Settings → API.
+3. Crear `.env.local` copiando el ejemplo y rellenando con esas claves:
+   ```bash
+   cp .env.local.example .env.local
+   ```
 
 ### Cómo se creó este proyecto
 
