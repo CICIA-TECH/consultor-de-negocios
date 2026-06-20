@@ -63,6 +63,7 @@ A partir de este principio, estructuramos nuestro trabajo en:
 - **Framework:** Next.js 15 (App Router).
 - **IA:** Cerebras (modelo `gpt-oss-120b`) integrado vía Vercel AI SDK (`@ai-sdk/react`, `@ai-sdk/cerebras`).
 - **Renderizado de Chat:** `marked` para parsear las respuestas Markdown del asistente a HTML con GitHub Flavored Markdown (GFM).
+- **Gráficos:** Recharts para visualización de datos interactiva (barras, líneas, pie) generada por IA via tool calls.
 - **Base de Datos & Auth:** Supabase (PostgreSQL).
 - **Almacenamiento:** Supabase Storage.
 - **Estilos:** Vanilla CSS.
@@ -129,6 +130,11 @@ npm run build
 ## 📂 Estructura
 
 - `app/` — App Router (layouts, páginas, route handlers).
+- `app/api/chat/route.ts` — Endpoint del chat con IA. Define las tools disponibles (como `renderChart`).
+- `components/` — Componentes React (ChatPanel, ChartRenderer, Sidebar, etc.).
+- `components/ChartRenderer.tsx` — Renderizado de gráficos interactivos con Recharts.
+- `lib/documents/` — Lectura y procesamiento de documentos del usuario.
+- `lib/navigation/` — Configuración de la navegación lateral.
 - `lib/supabase/` — Clientes de Supabase para browser (`client.ts`), server components (`server.ts`) y middleware (`middleware.ts`), listos para cuando se conecte Supabase.
 - `docs/` — Base de conocimientos y especificaciones.
 
@@ -163,6 +169,55 @@ npm run build
 - `npm run typecheck` — Verificación de tipos TypeScript.
 
 ---
-**Autoría de:** *Dokeh-404*
-**Fecha de creación:** *18 de junio de 2026*
-**Última actualización:** *18 de junio de 2026*
+
+## 📊 Gráficos Interactivos en el Chat
+
+El asistente IA puede generar gráficos interactivos directamente en el chat cuando considera que la visualización aporta más claridad que el texto.
+
+### ¿Cómo funciona?
+
+Se utiliza el sistema de **tool calls** del Vercel AI SDK:
+
+1. El modelo recibe la tool `renderChart` con un schema Zod que define los parámetros del gráfico.
+2. Cuando el modelo decide que un gráfico sería útil, invoca la tool con datos estructurados (tipo, título, datos, ejes).
+3. El frontend detecta la invocación en los `parts` del mensaje y renderiza un `<ChartRenderer>` con Recharts.
+
+El modelo decide **autónomamente** cuándo usar un gráfico — no necesita que el usuario lo pida explícitamente.
+
+### Tipos de gráficos soportados
+
+| Tipo   | Uso ideal                             | Ejemplo                          |
+|--------|---------------------------------------|----------------------------------|
+| `bar`  | Comparaciones entre categorías        | Ventas por mes, gastos por área  |
+| `line` | Tendencias temporales                 | Evolución de ingresos, proyecciones |
+| `pie`  | Proporciones / distribución           | Distribución de gastos, market share |
+
+### Características
+
+- **Dual series**: Soporte para comparar dos series de datos (ej: ingresos vs gastos).
+- **Theme-aware**: Los gráficos se adaptan automáticamente al modo claro/oscuro.
+- **Tooltips interactivos**: Al pasar el mouse se muestran los valores formateados.
+- **Animaciones suaves**: Los gráficos se animan al aparecer.
+- **Responsive**: Se adaptan al ancho disponible del chat.
+
+### Archivos clave
+
+- `app/api/chat/route.ts` → Definición de la tool `renderChart` con schema Zod.
+- `components/ChartRenderer.tsx` → Componente que renderiza los gráficos con Recharts.
+- `components/ChatPanel.tsx` → Detección de `tool-invocation` parts y delegación al renderer.
+
+---
+
+## ⚠️ Manejo de Errores y Límites de Cuota (Rate Limits)
+
+Para ofrecer una experiencia de usuario fluida y transparente, el sistema maneja los errores de cuota de la API de Cerebras (como el exceso de tokens por minuto o límites de peticiones) de la siguiente manera:
+
+1. **Propagación del Error (Backend):** Por defecto, el Vercel AI SDK enmascara los errores del servidor retornando un genérico `"An error occurred."`. Hemos configurado el callback `onError` en `toUIMessageStreamResponse` (`app/api/chat/route.ts`) para propagar el mensaje de error original del proveedor al cliente.
+2. **Detección en el Cliente (Frontend):** En `components/ChatPanel.tsx`, evaluamos el mensaje de error para detectar patrones de límite de cuota (como `tokens per minute`, `quota_exceeded` o `429`).
+3. **Banner de Advertencia Premium:** En lugar de lanzar una pantalla de error o texto genérico en rojo, se despliega un banner de advertencia elegante con colores de advertencia del sistema (`--color-warning-bg` y `--color-warning-text`), informando al usuario en español que no hay tokens disponibles en ese momento y que debe esperar un minuto antes de reintentar.
+
+---
+**Autoría de:** *Dokeh-404*  
+**Fecha de creación:** *18 de junio de 2026*  
+**Última actualización:** *20 de junio de 2026 (Manejo de cuota de tokens e interfaz de alertas)*
+
