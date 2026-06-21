@@ -217,7 +217,23 @@ Para ofrecer una experiencia de usuario fluida y transparente, el sistema maneja
 3. **Banner de Advertencia Premium:** En lugar de lanzar una pantalla de error o texto genérico en rojo, se despliega un banner de advertencia elegante con colores de advertencia del sistema (`--color-warning-bg` y `--color-warning-text`), informando al usuario en español que no hay tokens disponibles en ese momento y que debe esperar un minuto antes de reintentar.
 
 ---
+
+## ✍️ Visualización y Streaming de Respuestas (Typewriter & Auto-scroll)
+
+Para lograr una experiencia de usuario fluida al nivel de plataformas premium como Claude, Gemini o ChatGPT, se implementaron mejoras en la visualización de respuestas:
+
+1. **Efecto Typewriter (Máquina de escribir):**
+   - Aunque la infraestructura de Cerebras genera respuestas de manera instantánea y veloz, el frontend las expone de forma lineal y progresiva.
+   - Utiliza un Hook personalizado (`useTypewriter` en [ChatPanel.tsx](file:///c:/Users/benya/Desktop/things/Proyectos/STUP/consultor-de-negocios/components/ChatPanel.tsx)) que procesa y revela el texto a una velocidad parametrizada de **4 caracteres cada 25 ms** (~160 caracteres por segundo).
+   - Se muestra un cursor parpadeante estilizado (`|`) al final de la respuesta activa mientras se está revelando el texto.
+   - El formateador de Markdown (`marked`) renderiza el HTML sobre el texto revelado de forma dinámica y eficiente.
+
+2. **Auto-scroll Inteligente (No invasivo):**
+   - Mediante un `MutationObserver` en el elemento `#chat-messages`, el chat detecta cualquier cambio en la estructura del DOM (caracteres adicionales, formateo o inyección de gráficos) y realiza un scroll hacia el fondo.
+   - **Detección de intenciones del usuario (Scrollback Protection):** El sistema calcula si el usuario está cerca del final (umbral de 150px). Si el usuario desplaza el chat hacia arriba de forma manual para repasar un mensaje antiguo, el auto-scroll se detiene de inmediato para evitar que la pantalla salte de forma invasiva.
+
+---
 **Autoría de:** *Dokeh-404*  
 **Fecha de creación:** *18 de junio de 2026*  
-**Última actualización:** *20 de junio de 2026 (Manejo de cuota de tokens e interfaz de alertas)*
+**Última actualización:** *21 de junio de 2026 (Typewriter, Auto-scroll inteligente y Gráficos interactivos)*
 

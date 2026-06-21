@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, type FormEvent } from "react";
+import { useState, useMemo, useRef, useEffect, type FormEvent } from "react";
 import type { UIMessage } from "ai";
 import { marked } from "marked";
 import { ChartRenderer } from "./ChartRenderer";
@@ -20,25 +20,71 @@ interface ChatPanelProps {
   onSendMessage: (text: string) => void;
 }
 
-/** Renders a single block of markdown text */
-function MarkdownBlock({ text }: { text: string }) {
-  const html = useMemo(() => marked.parse(text) as string, [text]);
+/* ─── Hook: efecto typewriter para texto streaming ─── */
+function useTypewriter(text: string, isStreaming: boolean, charsPerTick = 4): string {
+  // Si el componente monta con isStreaming=true, entra en modo typewriter.
+  // Si monta con false (mensajes previos), muestra el texto completo.
+  const isTypewriterMode = useRef(isStreaming);
+  const [revealedLen, setRevealedLen] = useState(() =>
+    isStreaming ? 0 : text.length,
+  );
+
+  // Tick del typewriter: sigue revelando incluso después de que termine el streaming
+  useEffect(() => {
+    if (!isTypewriterMode.current || revealedLen >= text.length) return;
+
+    const timer = setTimeout(() => {
+      setRevealedLen((prev) => Math.min(prev + charsPerTick, text.length));
+    }, 25);
+
+    return () => clearTimeout(timer);
+  }, [revealedLen, text.length, charsPerTick]);
+
+  // Mensajes previos: mostrar todo inmediatamente
+  if (!isTypewriterMode.current) return text;
+
+  return text.slice(0, revealedLen);
+}
+
+/** Renders a single block of markdown text with optional typewriter effect */
+function MarkdownBlock({
+  text,
+  isStreaming = false,
+}: {
+  text: string;
+  isStreaming?: boolean;
+}) {
+  const displayedText = useTypewriter(text, isStreaming);
+  const isRevealing = isStreaming && displayedText.length < text.length;
+  const html = useMemo(() => marked.parse(displayedText) as string, [displayedText]);
 
   return (
-    <div
-      className={styles.markdownContent}
-      dangerouslySetInnerHTML={{ __html: html }}
-    />
+    <div className={styles.markdownContent}>
+      <div dangerouslySetInnerHTML={{ __html: html }} />
+      {isRevealing && <span className={styles.typingCursor} />}
+    </div>
   );
 }
 
 /** Renders all parts of an assistant message (text + charts) */
-function AssistantMessage({ parts }: { parts: UIMessage["parts"] }) {
+function AssistantMessage({
+  parts,
+  isStreaming,
+}: {
+  parts: UIMessage["parts"];
+  isStreaming: boolean;
+}) {
   return (
     <>
       {parts.map((part, index) => {
         if (part.type === "text") {
-          return <MarkdownBlock key={index} text={part.text} />;
+          return (
+            <MarkdownBlock
+              key={index}
+              text={part.text}
+              isStreaming={isStreaming}
+            />
+          );
         }
 
         if (part.type === "tool-renderChart") {
@@ -59,6 +105,36 @@ export function ChatPanel({
   onSendMessage,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  // Auto-scroll al final cuando llegan mensajes nuevos o durante streaming/typewriter
+  useEffect(() => {
+    const container = document.getElementById("chat-messages");
+    if (!container) return;
+
+    const isAtBottom = () => {
+      const threshold = 150; // px
+      return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
+    };
+
+    const observer = new MutationObserver(() => {
+      if (isAtBottom()) {
+        container.scrollTop = container.scrollHeight;
+      }
+    });
+
+    observer.observe(container, {
+      childList: true,
+      subtree: true,
+      characterData: true,
+    });
+
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [messages, isBusy]);
 
   function handleSubmit(event: FormEvent) {
     event.preventDefault();
@@ -84,7 +160,7 @@ export function ChatPanel({
 
   return (
     <section className={styles.chatPanel}>
-      <div className={styles.messages}>
+      <div className={styles.messages} id="chat-messages">
         {messages.length === 0 ? (
           <p className={styles.emptyState}>
             Selecciona una carpeta con documentos y escribe tu primera
@@ -92,12 +168,11 @@ export function ChatPanel({
             mes?&quot;
           </p>
         ) : (
-          messages.map((message) => (
+          messages.map((message, msgIndex) => (
             <div
               key={message.id}
-              className={`${styles.message} ${
-                message.role === "user" ? styles.user : styles.assistant
-              }`}
+              className={`${styles.message} ${message.role === "user" ? styles.user : styles.assistant
+                }`}
             >
               {message.role === "user" ? (
                 message.parts.map((part, index) =>
@@ -106,7 +181,10 @@ export function ChatPanel({
                   ) : null,
                 )
               ) : (
-                <AssistantMessage parts={message.parts} />
+                <AssistantMessage
+                  parts={message.parts}
+                  isStreaming={isBusy && msgIndex === messages.length - 1}
+                />
               )}
             </div>
           ))
@@ -135,6 +213,9 @@ export function ChatPanel({
             )}
           </div>
         )}
+
+        {/* Anchor invisible para auto-scroll */}
+        <div ref={messagesEndRef} />
       </div>
 
       <form className={styles.form} onSubmit={handleSubmit}>

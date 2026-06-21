@@ -42,8 +42,10 @@ No hay autenticación ni almacenamiento en la nube todavía: el MVP es una herra
 ### Flujo 2 — Conversación con la IA
 1. Una vez cargados los documentos, el usuario escribe una pregunta en el chat (ej. "¿cuál es mi margen de ganancia este trimestre?").
 2. La IA responde usando como contexto el contenido extraído de los documentos de la carpeta.
-3. El usuario puede seguir preguntando libremente; no hay un diagnóstico inicial automático.
-4. Si no hay documentos cargados, el chat lo indica y sugiere seleccionar una carpeta primero.
+3. **Efecto Typewriter (Máquina de escribir):** La respuesta de la IA se muestra de forma progresiva y suave a una velocidad natural de lectura (4 caracteres cada 25 ms), acompañada de un cursor parpadeante (`|`) para mejorar la legibilidad y la experiencia interactiva.
+4. **Auto-scroll Inteligente:** El chat se desplaza automáticamente hacia abajo conforme el texto se va revelando. Si el usuario decide hacer scroll hacia arriba manualmente para leer mensajes anteriores, el auto-scroll se detiene temporalmente para no interrumpir la lectura.
+5. El usuario puede seguir preguntando libremente; no hay un diagnóstico inicial automático.
+6. Si no hay documentos cargados, el chat lo indica y sugiere seleccionar una carpeta primero.
 
 ## 5. Pantallas (UI)
 
@@ -53,7 +55,8 @@ Una sola pantalla (single view), dividida en:
   - Botón "Seleccionar carpeta".
   - Lista de documentos detectados (nombre + ícono según tipo + estado: cargado / error de lectura).
 - **Panel principal (chat):**
-  - Historial de mensajes (usuario / IA).
+  - Historial de mensajes (usuario / IA) con burbujas de texto diferenciadas.
+  - **Gráficos Interactivos integrados:** Renderizado responsivo de gráficos (barras, líneas, pastel) generados dinámicamente por la IA mediante llamadas a herramientas de cliente, completamente adaptados al tema visual.
   - Input de texto + botón de enviar.
   - Estado vacío: mensaje guiando a seleccionar una carpeta si no hay documentos.
 

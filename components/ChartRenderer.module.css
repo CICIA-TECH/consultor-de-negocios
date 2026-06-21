@@ -6,16 +6,26 @@
   background: var(--color-surface-subtle);
   border: 1px solid var(--color-border);
   border-radius: 12px;
-  animation: chartFadeIn 0.4s ease-out;
   width: 100%;
   min-width: 420px;
   box-sizing: border-box;
 }
 
+/* ─── Viewport animation ─── */
+
+.chartHidden {
+  opacity: 0;
+  transform: translateY(12px);
+}
+
+.chartVisible {
+  animation: chartFadeIn 0.5s ease-out forwards;
+}
+
 @keyframes chartFadeIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(12px);
   }
 
   to {
@@ -67,7 +77,7 @@
   font-size: 0.78rem;
 }
 
-/* ─── Legend ─── */
+/* ─── Legend interactiva ─── */
 
 .legendList {
   display: flex;
@@ -84,6 +94,20 @@
   gap: 0.3rem;
   font-size: 0.75rem;
   color: var(--color-text-secondary);
+  cursor: pointer;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  user-select: none;
+}
+
+.legendItem:hover {
+  background: var(--color-surface-muted);
+}
+
+.legendItemHidden {
+  opacity: 0.45;
+  text-decoration: line-through;
 }
 
 .legendDot {
@@ -91,4 +115,85 @@
   height: 10px;
   border-radius: 50%;
   display: inline-block;
+  transition: background 0.2s ease;
+}
+
+/* ─── Panel de detalle (click-to-detail) ─── */
+
+.detailPanel {
+  margin-top: 0.75rem;
+  padding: 0.85rem 1rem;
+  background: var(--color-surface-muted);
+  border: 1px solid var(--color-border);
+  border-top: 3px solid var(--color-primary);
+  border-radius: 8px;
+  animation: detailSlideIn 0.25s ease-out;
+}
+
+@keyframes detailSlideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.detailHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.6rem;
+}
+
+.detailTitle {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--color-text);
+}
+
+.detailClose {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 4px;
+  line-height: 1;
+  transition: color 0.15s ease, background 0.15s ease;
+}
+
+.detailClose:hover {
+  color: var(--color-text);
+  background: var(--color-surface-subtle);
+}
+
+.detailGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+}
+
+.detailStat {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 90px;
+}
+
+.detailStatLabel {
+  font-size: 0.7rem;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.detailStatValue {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--color-text);
 }
