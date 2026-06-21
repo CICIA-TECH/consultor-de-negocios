@@ -61,6 +61,7 @@ export default function Home() {
           messages={messages}
           isBusy={isBusy}
           error={error}
+          loadedDocsCount={documents.filter((doc) => doc.status === "loaded").length}
           onSendMessage={(text) =>
             sendMessage({ text }, { body: { documentContext } })
           }

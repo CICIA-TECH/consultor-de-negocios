@@ -5,6 +5,16 @@ import type { UIMessage } from "ai";
 import { marked } from "marked";
 import { ChartRenderer } from "./ChartRenderer";
 import type { ChartProps } from "./ChartRenderer";
+import {
+  Send,
+  Sparkles,
+  User,
+  PieChart,
+  TrendingUp,
+  Zap,
+  Coins,
+  FileText,
+} from "lucide-react";
 import styles from "./ChatPanel.module.css";
 
 // Configure marked for clean output
@@ -18,6 +28,7 @@ interface ChatPanelProps {
   isBusy: boolean;
   error: Error | undefined;
   onSendMessage: (text: string) => void;
+  loadedDocsCount?: number;
 }
 
 /* ─── Hook: efecto typewriter para texto streaming ─── */
@@ -103,6 +114,7 @@ export function ChatPanel({
   isBusy,
   error,
   onSendMessage,
+  loadedDocsCount,
 }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -158,59 +170,194 @@ export function ChatPanel({
     );
   }, [error]);
 
+  const quickActions = [
+    {
+      title: "Analizar gastos",
+      description: "Identificar los mayores gastos del mes actual.",
+      prompt: "¿Cuáles son mis gastos más altos este mes?",
+      icon: PieChart,
+      color: "#3b82f6",
+    },
+    {
+      title: "Proyectar ventas",
+      description: "Hacer una proyección de ventas para el trimestre.",
+      prompt: "Haz una proyección de mis ventas para este trimestre basada en los datos.",
+      icon: TrendingUp,
+      color: "#10b981",
+    },
+    {
+      title: "Optimizar operación",
+      description: "Buscar áreas de mejora operativa y ahorro.",
+      prompt: "¿Qué áreas de mi negocio muestran oportunidades de optimización?",
+      icon: Zap,
+      color: "#f59e0b",
+    },
+    {
+      title: "Flujo de caja",
+      description: "Evaluar la salud de los ingresos y egresos.",
+      prompt: "Dame un diagnóstico rápido sobre la salud de mi flujo de caja.",
+      icon: Coins,
+      color: "#8b5cf6",
+    },
+  ];
+
+  function handleQuickAction(prompt: string) {
+    if (isBusy) return;
+    onSendMessage(prompt);
+  }
+
   return (
     <section className={styles.chatPanel}>
+      {/* Cabecera del Chat Premium */}
+      <div className={styles.chatHeader}>
+        <div className={styles.headerInfo}>
+          <div className={styles.avatarMini}>
+            <Sparkles size={14} />
+          </div>
+          <div>
+            <h3 className={styles.headerTitle}>Asistente de Negocios</h3>
+            <div className={styles.modelStatus}>
+              <span className={styles.pulseDot} />
+              <span>Cerebras gpt-oss-120b</span>
+            </div>
+          </div>
+        </div>
+        {loadedDocsCount !== undefined && (
+          <div className={styles.headerContext}>
+            <FileText size={13} />
+            <span>
+              {loadedDocsCount} {loadedDocsCount === 1 ? "documento" : "documentos"} de contexto
+            </span>
+          </div>
+        )}
+      </div>
+
       <div className={styles.messages} id="chat-messages">
         {messages.length === 0 ? (
-          <p className={styles.emptyState}>
-            Selecciona una carpeta con documentos y escribe tu primera
-            pregunta. Por ejemplo: &quot;¿cuáles son mis gastos más altos este
-            mes?&quot;
-          </p>
-        ) : (
-          messages.map((message, msgIndex) => (
-            <div
-              key={message.id}
-              className={`${styles.message} ${message.role === "user" ? styles.user : styles.assistant
-                }`}
-            >
-              {message.role === "user" ? (
-                message.parts.map((part, index) =>
-                  part.type === "text" ? (
-                    <span key={index}>{part.text}</span>
-                  ) : null,
-                )
-              ) : (
-                <AssistantMessage
-                  parts={message.parts}
-                  isStreaming={isBusy && msgIndex === messages.length - 1}
-                />
-              )}
+          /* Pantalla de Bienvenida Estilo Hero */
+          <div className={styles.welcomeContainer}>
+            <div className={styles.welcomeHero}>
+              <div className={styles.welcomeLogo}>
+                <Sparkles size={32} />
+              </div>
+              <h2 className={styles.welcomeTitle}>¿Cómo puedo ayudarte hoy?</h2>
+              <p className={styles.welcomeSubtitle}>
+                Analiza los documentos locales de tu organización, diagnostica estados financieros y genera gráficos interactivos automáticamente.
+              </p>
             </div>
-          ))
+
+            <div className={styles.quickActionsGrid}>
+              {quickActions.map((action, i) => {
+                const ActionIcon = action.icon;
+                return (
+                  <button
+                    key={i}
+                    type="button"
+                    className={styles.quickActionCard}
+                    onClick={() => handleQuickAction(action.prompt)}
+                    disabled={isBusy}
+                  >
+                    <div className={styles.quickActionHeader}>
+                      <span
+                        className={styles.quickActionIconWrapper}
+                        style={{
+                          backgroundColor: `${action.color}15`,
+                          color: action.color,
+                        }}
+                      >
+                        <ActionIcon size={16} />
+                      </span>
+                      <h4 className={styles.quickActionTitle}>{action.title}</h4>
+                    </div>
+                    <p className={styles.quickActionDesc}>{action.description}</p>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ) : (
+          messages.map((message, msgIndex) => {
+            const isUser = message.role === "user";
+            return (
+              <div
+                key={message.id}
+                className={`${styles.messageRow} ${
+                  isUser ? styles.rowUser : styles.rowAssistant
+                }`}
+              >
+                {!isUser && (
+                  <div className={styles.avatarAssistant}>
+                    <Sparkles size={14} />
+                  </div>
+                )}
+
+                <div
+                  className={`${styles.bubble} ${
+                    isUser ? styles.bubbleUser : styles.bubbleAssistant
+                  }`}
+                >
+                  {isUser ? (
+                    message.parts.map((part, index) =>
+                      part.type === "text" ? (
+                        <span key={index} className={styles.userText}>
+                          {part.text}
+                        </span>
+                      ) : null
+                    )
+                  ) : (
+                    <AssistantMessage
+                      parts={message.parts}
+                      isStreaming={isBusy && msgIndex === messages.length - 1}
+                    />
+                  )}
+                </div>
+
+                {isUser && (
+                  <div className={styles.avatarUser}>
+                    <User size={14} />
+                  </div>
+                )}
+              </div>
+            );
+          })
         )}
 
         {isBusy && messages[messages.length - 1]?.role === "user" && (
-          <div className={`${styles.message} ${styles.assistant}`}>
-            <span className={styles.loadingDots}>Pensando...</span>
+          <div className={`${styles.messageRow} ${styles.rowAssistant}`}>
+            <div className={styles.avatarAssistant}>
+              <Sparkles size={14} />
+            </div>
+            <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
+              <div className={styles.bouncingLoader}>
+                <span className={styles.dot} />
+                <span className={styles.dot} />
+                <span className={styles.dot} />
+              </div>
+            </div>
           </div>
         )}
 
         {error && (
-          <div className={`${styles.message} ${isTokenLimit ? styles.warning : styles.error}`}>
-            {isTokenLimit ? (
-              <div className={styles.errorContent}>
-                <span className={styles.errorIcon}>⏳</span>
-                <div className={styles.errorText}>
-                  <strong className={styles.errorTitle}>Límite de consultas alcanzado</strong>
-                  <p className={styles.errorDescription}>
-                    No hay tokens disponibles para la consulta en este momento. Por favor, espera un minuto e inténtalo de nuevo.
-                  </p>
+          <div
+            className={`${styles.messageRow} ${
+              isTokenLimit ? styles.warningRow : styles.errorRow
+            }`}
+          >
+            <div className={`${styles.bubble} ${isTokenLimit ? styles.warning : styles.error}`}>
+              {isTokenLimit ? (
+                <div className={styles.errorContent}>
+                  <span className={styles.errorIcon}>⏳</span>
+                  <div className={styles.errorText}>
+                    <strong className={styles.errorTitle}>Límite de consultas alcanzado</strong>
+                    <p className={styles.errorDescription}>
+                      No hay tokens disponibles para la consulta en este momento. Por favor, espera un minuto e inténtalo de nuevo.
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <span>Error: {error.message}</span>
-            )}
+              ) : (
+                <span>Error: {error.message}</span>
+              )}
+            </div>
           </div>
         )}
 
@@ -223,15 +370,20 @@ export function ChatPanel({
           className={styles.input}
           value={input}
           onChange={(event) => setInput(event.target.value)}
-          placeholder="Escribe tu pregunta..."
+          placeholder={
+            loadedDocsCount && loadedDocsCount > 0
+              ? "Haz una pregunta sobre tus documentos..."
+              : "Escribe tu pregunta..."
+          }
           disabled={isBusy}
         />
         <button
           className={styles.sendButton}
           type="submit"
           disabled={isBusy || !input.trim()}
+          title="Enviar mensaje"
         >
-          {isBusy ? "Enviando..." : "Enviar"}
+          <Send size={16} />
         </button>
       </form>
     </section>
