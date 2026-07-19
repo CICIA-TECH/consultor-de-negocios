@@ -68,6 +68,7 @@ A partir de este principio, estructuramos nuestro trabajo en:
 - **Almacenamiento:** Supabase Storage.
 - **Estilos:** Vanilla CSS.
 - **Despliegue:** Vercel.
+- **Tooling de desarrollo:** [Vercel Plugin para Claude Code](https://github.com/vercel/vercel-plugin) — da acceso a skills/comandos de Vercel (CLI, deploys, logs, storage) directamente dentro de Claude Code.
 
 *Nota: Supabase (base de datos, auth, storage) está integrado en el proyecto pero aún no conectado al flujo del MVP — queda reservado para la Fase 2. La versión actual del MVP lee documentos desde una carpeta local del navegador.*
 
@@ -81,6 +82,8 @@ A partir de este principio, estructuramos nuestro trabajo en:
    ```
 
 2. **Configurar Variables de Entorno:**
+
+   **Opción A — manual:**
    Copia el archivo de ejemplo y agrega tu API key de Cerebras:
    ```bash
    cp .env.local.example .env.local
@@ -90,6 +93,16 @@ A partir de este principio, estructuramos nuestro trabajo en:
    CEREBRAS_API_KEY=csk-tu-clave-aqui
    ```
 
+   **Opción B — vía Vercel CLI (recomendado si el proyecto ya está conectado a Vercel):**
+   Sincroniza las variables marcadas como *Development* en el dashboard de Vercel en vez de cargarlas a mano:
+   ```bash
+   npm i -g vercel
+   vercel login
+   vercel link      # una sola vez, asocia esta carpeta al proyecto de Vercel
+   vercel env pull .env.local
+   ```
+   Repetir `vercel env pull .env.local` cada vez que una key de desarrollo cambie en Vercel.
+
 3. **Levantar en desarrollo:**
    ```bash
    npm run dev
@@ -97,6 +110,18 @@ A partir de este principio, estructuramos nuestro trabajo en:
    Abrir [http://localhost:3000](http://localhost:3000) en **Chrome o Edge** (la selección de carpeta usa la File System Access API, no soportada en Firefox/Safari).
 
 4. **Usar el MVP:** Haz click en "Seleccionar carpeta", elige una carpeta local con PDFs o archivos Excel/CSV, y escribe tus preguntas. La IA analizará el contexto usando el modelo `gpt-oss-120b` de Cerebras.
+
+### Vercel Plugin para Claude Code (opcional)
+
+Da acceso a skills de Vercel (CLI, deploys, logs, env vars, storage) dentro de Claude Code. No es requerido para correr el proyecto, es una herramienta de productividad para quienes desarrollan.
+
+**Instalar** (por dev, nivel de usuario — no es parte del repo):
+```bash
+npx plugins add vercel/vercel-plugin --target claude-code
+```
+Reiniciar Claude Code después de instalar para que cargue el plugin.
+
+**Usar:** una vez instalado, invocar los skills disponibles (ej. `vercel-cli`, `vercel-connect`, `vercel-storage`) directamente pidiéndole a Claude Code que gestione algo del proyecto en Vercel (deploy, logs, env vars).
 
 ### Setup de Supabase (Fase 2)
 
@@ -149,6 +174,30 @@ npm run build
 3. Configurar las variables `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en el dashboard de Vercel.
 
 ---
+
+## 📈 Vercel Speed Insights
+
+Herramienta de Vercel para medir el rendimiento real (Real User Monitoring) del sitio en producción, en base a las visitas reales de los usuarios (no solo tests sintéticos).
+
+### Métricas que reporta (Core Web Vitals + adicionales)
+
+| Métrica | Qué mide |
+|---------|----------|
+| **LCP** (Largest Contentful Paint) | Velocidad de carga: cuánto tarda en renderizarse el elemento más grande visible (ej. el chat/sidebar principal). |
+| **FID / INP** (Interaction to Next Paint) | Responsividad: cuánto tarda la UI en reaccionar a una interacción del usuario (ej. click en "Seleccionar carpeta"). |
+| **CLS** (Cumulative Layout Shift) | Estabilidad visual: cuánto se "salta"/reacomoda el layout mientras carga (ej. si el chat empuja contenido al cargar mensajes). |
+| **TTFB** (Time to First Byte) | Qué tan rápido responde el servidor con el primer byte de la página. |
+| **FCP** (First Contentful Paint) | Cuándo aparece el primer contenido visible en pantalla. |
+
+Se puede filtrar por página, dispositivo y navegador — útil para el caso puntual de este proyecto para ver si stakeholders en navegadores no soportados (Firefox/Safari) tienen métricas mucho peores, o si el flujo de carga de documentos grandes impacta el LCP/INP.
+
+### Cómo está habilitado
+
+1. **Dashboard de Vercel:** Project → tab **Speed Insights** → **Enable**. *(Hecho.)*
+2. **Código:** paquete instalado (`@vercel/speed-insights`) y componente `<SpeedInsights />` agregado en `app/layout.tsx`, dentro del `<body>`. Se ejecuta en el navegador de cualquier visitante, sin necesidad de login (ver nota de privacidad abajo).
+3. Los datos aparecen en el dashboard después de que haya tráfico real en producción — no hay datos instantáneos al activar.
+
+*Nota: no requiere autenticación de usuarios para funcionar — mide de forma anónima por visita a la página (Web Vitals del navegador), no por identidad de usuario. Ver sección de Setup, no hace falta configurar nada adicional.*
 
 ## 📚 Documentación Oficial
 

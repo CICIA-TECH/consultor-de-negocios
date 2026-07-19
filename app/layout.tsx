@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
+import { SpeedInsights } from "@vercel/speed-insights/next";
 import { applyStoredThemeScript } from "@/lib/theme/theme";
 import "./globals.css";
 
@@ -33,7 +34,10 @@ export default function RootLayout({
         <link rel="icon" href="/icono-cicia.png" type="image/png" />
         <script dangerouslySetInnerHTML={{ __html: applyStoredThemeScript }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        <SpeedInsights />
+      </body>
     </html>
   );
 }
