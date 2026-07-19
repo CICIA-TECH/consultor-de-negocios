@@ -1,123 +1,136 @@
 :root {
-  /* Paleta cruda — única fuente de verdad para cada tema.
-     Los bloques de abajo solo asignan estas variables a los nombres
-     semánticos (--color-*), nunca repiten un valor hexadecimal. */
-  --palette-light-bg: #f7f8fc;
-  --palette-light-text: #11162a;
-  --palette-light-text-secondary: #555b75;
-  --palette-light-text-muted: #8a90a8;
-  --palette-light-border: #dfe3ee;
-  --palette-light-border-strong: #c5cbdf;
-  --palette-light-surface-subtle: #ffffff;
-  --palette-light-surface-muted: #eef0f7;
-  --palette-light-primary: #18a373;
-  --palette-light-primary-hover: #14855e;
-  --palette-light-on-primary: #ffffff;
-  --palette-light-success: #1f9d6c;
-  --palette-light-danger: #dc2626;
-  --palette-light-warning-bg: #fff4e0;
-  --palette-light-warning-text: #b45309;
+  /* ══════════════════════════════════════════════════════
+     CICIA — Paleta cromática oficial
+     Única fuente de verdad. Nunca repetir hex fuera de aquí.
+     ══════════════════════════════════════════════════════ */
 
-  --palette-dark-bg: #1a1e2e;
-  --palette-dark-text: #f1f3f9;
-  --palette-dark-text-secondary: #9aa3c0;
-  --palette-dark-text-muted: #6b7390;
-  --palette-dark-border: #2a3150;
-  --palette-dark-border-strong: #3a4270;
-  --palette-dark-surface-subtle: #161c30;
-  --palette-dark-surface-muted: #1c2238;
-  --palette-dark-primary: #00c48c;
-  --palette-dark-primary-hover: #17a06d;
-  --palette-dark-on-primary: #ffffff;
-  --palette-dark-success: #34d399;
-  --palette-dark-danger: #ef4444;
-  --palette-dark-warning-bg: #2e2410;
-  --palette-dark-warning-text: #eab308;
+  /* Colores CICIA base */
+  --cicia-bg-deep:      #0B0F19;  /* fondo principal dark */
+  --cicia-bg-surface:   #151B2D;  /* superficie / sidebar dark */
+  --cicia-purple-dark:  #2E126D;  /* acento profundo / gradiente */
+  --cicia-blue:         #3A5BF3;  /* primario / botones */
+  --cicia-blue-hover:   #2E48D0;  /* hover primario */
+  --cicia-teal:         #00CAB5;  /* acento secundario / éxito */
+  --cicia-teal-hover:   #009E8C;
+  --cicia-violet:       #9546F3;  /* dot del logo / badges */
+  --cicia-violet-hover: #7B30D4;
 
-  /* Base (valor por defecto = claro) */
-  --color-bg: var(--palette-light-bg);
-  --color-text: var(--palette-light-text);
-  --color-text-secondary: var(--palette-light-text-secondary);
-  --color-text-muted: var(--palette-light-text-muted);
+  /* Grises oscuros (dark palette) */
+  --cicia-dark-text:          #E8ECF8;
+  --cicia-dark-text-sec:      #8892B8;
+  --cicia-dark-text-muted:    #4E5880;
+  --cicia-dark-border:        #1E2640;
+  --cicia-dark-border-strong: #2A3460;
+  --cicia-dark-surface-sub:   #151B2D;  /* sidebar y superficies oscuras */
+  --cicia-dark-surface-muted: #1A2035;
 
-  --color-border: var(--palette-light-border);
-  --color-border-strong: var(--palette-light-border-strong);
-  --color-surface-subtle: var(--palette-light-surface-subtle);
-  --color-surface-muted: var(--palette-light-surface-muted);
+  /* Grises claros (light palette) — derivados de CICIA */
+  --cicia-light-bg:           #F2F4FF;
+  --cicia-light-text:         #0B0F19;
+  --cicia-light-text-sec:     #2E3568;
+  --cicia-light-text-muted:   #6B74A0;
+  --cicia-light-border:       #D8DCFF;
+  --cicia-light-border-strong:#A8B0F0;
+  --cicia-light-surface-sub:  #ECEEFF;  /* sidebar y superficies claras */
+  --cicia-light-surface-muted:#E0E4FF;
 
-  --color-primary: var(--palette-light-primary);
-  --color-primary-hover: var(--palette-light-primary-hover);
-  --color-on-primary: var(--palette-light-on-primary);
+  /* ── Variables semánticas — por defecto: DARK ── */
+  --color-bg:              var(--cicia-bg-deep);
+  --color-text:            var(--cicia-dark-text);
+  --color-text-secondary:  var(--cicia-dark-text-sec);
+  --color-text-muted:      var(--cicia-dark-text-muted);
 
-  --color-success: var(--palette-light-success);
-  --color-danger: var(--palette-light-danger);
-  --color-warning-bg: var(--palette-light-warning-bg);
-  --color-warning-text: var(--palette-light-warning-text);
+  --color-border:          var(--cicia-dark-border);
+  --color-border-strong:   var(--cicia-dark-border-strong);
+  --color-surface-subtle:  var(--cicia-dark-surface-sub);
+  --color-surface-muted:   var(--cicia-dark-surface-muted);
+
+  --color-primary:         var(--cicia-blue);
+  --color-primary-hover:   var(--cicia-blue-hover);
+  --color-on-primary:      #ffffff;
+
+  --color-accent:          var(--cicia-violet);
+  --color-accent-hover:    var(--cicia-violet-hover);
+
+  --color-success:         var(--cicia-teal);
+  --color-danger:          #EF4444;
+  --color-warning-bg:      rgba(46, 18, 109, 0.35);
+  --color-warning-text:    var(--cicia-violet);
 }
 
-/* Automático: sigue la preferencia del sistema mientras no haya override manual */
+/* ── Dark: automático por preferencia de sistema ── */
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --color-bg: var(--palette-dark-bg);
-    --color-text: var(--palette-dark-text);
-    --color-text-secondary: var(--palette-dark-text-secondary);
-    --color-text-muted: var(--palette-dark-text-muted);
+    --color-bg:             var(--cicia-bg-deep);
+    --color-text:           var(--cicia-dark-text);
+    --color-text-secondary: var(--cicia-dark-text-sec);
+    --color-text-muted:     var(--cicia-dark-text-muted);
 
-    --color-border: var(--palette-dark-border);
-    --color-border-strong: var(--palette-dark-border-strong);
-    --color-surface-subtle: var(--palette-dark-surface-subtle);
-    --color-surface-muted: var(--palette-dark-surface-muted);
+    --color-border:         var(--cicia-dark-border);
+    --color-border-strong:  var(--cicia-dark-border-strong);
+    --color-surface-subtle: var(--cicia-dark-surface-sub);
+    --color-surface-muted:  var(--cicia-dark-surface-muted);
 
-    --color-primary: var(--palette-dark-primary);
-    --color-primary-hover: var(--palette-dark-primary-hover);
-    --color-on-primary: var(--palette-dark-on-primary);
+    --color-primary:        var(--cicia-blue);
+    --color-primary-hover:  var(--cicia-blue-hover);
+    --color-on-primary:     #ffffff;
 
-    --color-success: var(--palette-dark-success);
-    --color-danger: var(--palette-dark-danger);
-    --color-warning-bg: var(--palette-dark-warning-bg);
-    --color-warning-text: var(--palette-dark-warning-text);
+    --color-accent:         var(--cicia-violet);
+    --color-accent-hover:   var(--cicia-violet-hover);
+
+    --color-success:        var(--cicia-teal);
+    --color-danger:         #EF4444;
+    --color-warning-bg:     rgba(46, 18, 109, 0.35);
+    --color-warning-text:   var(--cicia-violet);
   }
 }
 
-/* Override manual del usuario (mayor especificidad que :root y que la media query) */
+/* ── Override manual: LIGHT ── */
 :root[data-theme="light"] {
-  --color-bg: var(--palette-light-bg);
-  --color-text: var(--palette-light-text);
-  --color-text-secondary: var(--palette-light-text-secondary);
-  --color-text-muted: var(--palette-light-text-muted);
+  --color-bg:             var(--cicia-light-bg);
+  --color-text:           var(--cicia-light-text);
+  --color-text-secondary: var(--cicia-light-text-sec);
+  --color-text-muted:     var(--cicia-light-text-muted);
 
-  --color-border: var(--palette-light-border);
-  --color-border-strong: var(--palette-light-border-strong);
-  --color-surface-subtle: var(--palette-light-surface-subtle);
-  --color-surface-muted: var(--palette-light-surface-muted);
+  --color-border:         var(--cicia-light-border);
+  --color-border-strong:  var(--cicia-light-border-strong);
+  --color-surface-subtle: var(--cicia-light-surface-sub);
+  --color-surface-muted:  var(--cicia-light-surface-muted);
 
-  --color-primary: var(--palette-light-primary);
-  --color-primary-hover: var(--palette-light-primary-hover);
-  --color-on-primary: var(--palette-light-on-primary);
+  --color-primary:        var(--cicia-blue);
+  --color-primary-hover:  var(--cicia-blue-hover);
+  --color-on-primary:     #ffffff;
 
-  --color-success: var(--palette-light-success);
-  --color-danger: var(--palette-light-danger);
-  --color-warning-bg: var(--palette-light-warning-bg);
-  --color-warning-text: var(--palette-light-warning-text);
+  --color-accent:         var(--cicia-violet);
+  --color-accent-hover:   var(--cicia-violet-hover);
+
+  --color-success:        var(--cicia-teal);
+  --color-danger:         #DC2626;
+  --color-warning-bg:     #EDE8FF;
+  --color-warning-text:   var(--cicia-purple-dark);
 }
 
+/* ── Override manual: DARK ── */
 :root[data-theme="dark"] {
-  --color-bg: var(--palette-dark-bg);
-  --color-text: var(--palette-dark-text);
-  --color-text-secondary: var(--palette-dark-text-secondary);
-  --color-text-muted: var(--palette-dark-text-muted);
+  --color-bg:             var(--cicia-bg-deep);
+  --color-text:           var(--cicia-dark-text);
+  --color-text-secondary: var(--cicia-dark-text-sec);
+  --color-text-muted:     var(--cicia-dark-text-muted);
 
-  --color-border: var(--palette-dark-border);
-  --color-border-strong: var(--palette-dark-border-strong);
-  --color-surface-subtle: var(--palette-dark-surface-subtle);
-  --color-surface-muted: var(--palette-dark-surface-muted);
+  --color-border:         var(--cicia-dark-border);
+  --color-border-strong:  var(--cicia-dark-border-strong);
+  --color-surface-subtle: var(--cicia-dark-surface-sub);
+  --color-surface-muted:  var(--cicia-dark-surface-muted);
 
-  --color-primary: var(--palette-dark-primary);
-  --color-primary-hover: var(--palette-dark-primary-hover);
-  --color-on-primary: var(--palette-dark-on-primary);
+  --color-primary:        var(--cicia-blue);
+  --color-primary-hover:  var(--cicia-blue-hover);
+  --color-on-primary:     #ffffff;
 
-  --color-success: var(--palette-dark-success);
-  --color-danger: var(--palette-dark-danger);
-  --color-warning-bg: var(--palette-dark-warning-bg);
-  --color-warning-text: var(--palette-dark-warning-text);
+  --color-accent:         var(--cicia-violet);
+  --color-accent-hover:   var(--cicia-violet-hover);
+
+  --color-success:        var(--cicia-teal);
+  --color-danger:         #EF4444;
+  --color-warning-bg:     rgba(46, 18, 109, 0.35);
+  --color-warning-text:   var(--cicia-violet);
 }

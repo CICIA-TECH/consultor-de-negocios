@@ -1,8 +1,11 @@
 "use client";
 
+import React from "react";
 import { MAIN_NAV_ITEMS, FOOTER_NAV_ITEMS } from "@/lib/navigation/config";
 import type { ViewId } from "@/lib/navigation/config";
 import { NavItem } from "./NavItem";
+import { CiciaLogo } from "./CiciaBranding";
+import { ChevronDown } from "lucide-react";
 import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
@@ -13,9 +16,9 @@ interface SidebarProps {
 export function Sidebar({ activeView, onSelectView }: SidebarProps) {
   return (
     <aside className={styles.sidebar}>
+      {/* Dynamic Cicia Logo (Adapts to Light/Dark automatically) */}
       <div className={styles.brand}>
-        <span className={styles.brandMark}>C</span>
-        <span className={styles.brandName}>CICIA</span>
+        <CiciaLogo height={38} />
       </div>
 
       <nav className={styles.nav} aria-label="Navegación principal">
@@ -31,8 +34,6 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
 
       <div className={styles.spacer} />
 
-      <div className={styles.separator} />
-
       <nav className={styles.nav} aria-label="Cuenta">
         {FOOTER_NAV_ITEMS.map((item) => (
           <NavItem
@@ -43,6 +44,19 @@ export function Sidebar({ activeView, onSelectView }: SidebarProps) {
           />
         ))}
       </nav>
+
+      {/* Perfil de usuario */}
+      <div className={styles.separator} />
+      <div className={styles.profile}>
+        <div className={styles.profileAvatar}>
+          <span>AP</span>
+        </div>
+        <div className={styles.profileInfo}>
+          <span className={styles.profileName}>Alex Pérez</span>
+          <span className={styles.profileRole}>Director Ejecutivo</span>
+        </div>
+        <ChevronDown size={14} className={styles.profileChevron} />
+      </div>
     </aside>
   );
 }

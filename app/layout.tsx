@@ -1,22 +1,21 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Inter } from "next/font/google";
 import { applyStoredThemeScript } from "@/lib/theme/theme";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const inter = Inter({
+  variable: "--font-inter",
   subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
-  title: "Consultor de Negocios",
+  title: "CICIA — Consultor de Negocios IA",
   description:
-    "Asesoría empresarial impulsada por IA: sube documentos de tu empresa y obtén análisis y diagnósticos.",
+    "Asesoría empresarial impulsada por IA: sube documentos de tu empresa y obtén análisis, diagnósticos y gráficos interactivos.",
+  icons: {
+    icon: "/icono-cicia.png",
+  },
 };
 
 export default function RootLayout({
@@ -27,10 +26,11 @@ export default function RootLayout({
   return (
     <html
       lang="es"
-      className={`${geistSans.variable} ${geistMono.variable}`}
+      className={inter.variable}
       suppressHydrationWarning
     >
       <head>
+        <link rel="icon" href="/icono-cicia.png" type="image/png" />
         <script dangerouslySetInnerHTML={{ __html: applyStoredThemeScript }} />
       </head>
       <body>{children}</body>

@@ -1,54 +1,111 @@
 .sidebar {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: 1.25rem 1rem;
-  width: 280px;
+  gap: 0.25rem;
+  padding: 1.25rem 0.875rem;
+  width: 260px;
   background: var(--color-surface-subtle);
   border-right: 1px solid var(--color-border);
   height: 100vh;
   box-sizing: border-box;
   overflow-y: auto;
+  position: relative;
+  z-index: 10;
+  flex-shrink: 0;
 }
 
+/* ── Logo ── */
 .brand {
   display: flex;
+  justify-content: flex-start;
   align-items: center;
-  gap: 0.6rem;
-  padding: 0.5rem 0.25rem 1.25rem;
+  width: 100%;
+  padding: 1rem 0.95rem 2.25rem;
 }
 
-.brandMark {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 36px;
-  height: 36px;
-  border-radius: 10px;
-  background: var(--color-primary);
-  color: var(--color-on-primary);
-  font-weight: 700;
-  font-size: 1.1rem;
+.brandLogo {
+  height: auto;
+  width: auto;
+  max-width: 100px;
+  object-fit: contain;
 }
 
-.brandName {
-  font-weight: 700;
-  font-size: 1.05rem;
-  color: var(--color-text);
-}
-
+/* ── Navegación ── */
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.15rem;
 }
 
-.spacer {
-  flex: 1;
-}
+.spacer { flex: 1; }
 
 .separator {
   height: 1px;
   background: var(--color-border);
   margin: 0.5rem 0.25rem;
+  opacity: 0.5;
+}
+
+/* ── Perfil ── */
+.profile {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.5rem;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: background 0.18s;
+}
+
+.profile:hover { background: var(--color-surface-muted); }
+
+.profileAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: linear-gradient(135deg, var(--cicia-blue, #3A5BF3), var(--cicia-violet, #9546F3));
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.78rem;
+  font-weight: 700;
+  font-family: 'Satoshi', sans-serif;
+}
+
+.profileInfo {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.05rem;
+}
+
+.profileName {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profileRole {
+  font-size: 0.65rem;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.profileChevron {
+  color: var(--color-text-muted);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.profile:hover .profileChevron {
+  color: var(--color-text);
 }

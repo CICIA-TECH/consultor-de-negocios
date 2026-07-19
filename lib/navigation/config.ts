@@ -1,13 +1,12 @@
 import {
-  MessageCircle,
-  Info,
-  Building2,
-  Zap,
-  CalendarDays,
-  Newspaper,
-  CheckSquare,
+  Home,
+  Sparkles,
+  BarChart3,
+  FileText,
+  Brain,
+  Puzzle,
   Settings,
-  Crown,
+  Building2,
 } from "lucide-react";
 import type { NavItemConfig } from "./types";
 
@@ -17,18 +16,17 @@ import type { NavItemConfig } from "./types";
  * y, si corresponde, agregar su vista en `app/page.tsx`.
  */
 export const MAIN_NAV_ITEMS: NavItemConfig[] = [
-  { id: "chat", label: "Chat con CICIA", icon: MessageCircle, status: "active" },
-  { id: "info", label: "Mi información", icon: Info, status: "soon" },
+  { id: "chat", label: "Inicio", icon: Home, status: "active" },
+  { id: "asistente", label: "Asistente IA", icon: Sparkles, status: "soon" },
+  { id: "analitica", label: "Analítica", icon: BarChart3, status: "soon" },
+  { id: "documentos", label: "Documentos", icon: FileText, status: "soon" },
   { id: "empresa", label: "Mi empresa", icon: Building2, status: "active" },
-  { id: "atajos", label: "Atajos", icon: Zap, status: "soon" },
-  { id: "agenda", label: "Agenda reunión", icon: CalendarDays, status: "soon" },
-  { id: "blog", label: "Blog / Noticias", icon: Newspaper, status: "soon" },
-  { id: "tareas", label: "Tareas", icon: CheckSquare, status: "soon" },
+  { id: "conocimiento", label: "Conocimiento", icon: Brain, status: "soon" },
+  { id: "integraciones", label: "Integraciones", icon: Puzzle, status: "soon" },
 ];
 
 export const FOOTER_NAV_ITEMS: NavItemConfig[] = [
   { id: "configuracion", label: "Configuración", icon: Settings, status: "active" },
-  { id: "suscripcion", label: "Suscripción", icon: Crown, status: "soon" },
 ];
 
 export const ALL_NAV_ITEMS: NavItemConfig[] = [

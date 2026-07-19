@@ -20,9 +20,9 @@ export function NavItem({ item, isActive, onSelect }: NavItemProps) {
         aria-disabled="true"
         title="Próximamente"
       >
-        <Icon className={styles.icon} size={18} aria-hidden="true" />
+        <Icon className={styles.icon} size={20} aria-hidden="true" />
         <span className={styles.label}>{item.label}</span>
-        <span className={styles.badge}>Próximamente</span>
+        <span className={styles.badge} aria-label="Próximamente" />
       </div>
     );
   }
@@ -34,7 +34,7 @@ export function NavItem({ item, isActive, onSelect }: NavItemProps) {
       onClick={() => onSelect(item.id)}
       aria-current={isActive ? "page" : undefined}
     >
-      <Icon className={styles.icon} size={18} aria-hidden="true" />
+      <Icon className={styles.icon} size={20} aria-hidden="true" />
       <span className={styles.label}>{item.label}</span>
     </button>
   );

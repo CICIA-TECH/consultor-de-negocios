@@ -1,16 +1,18 @@
 .item {
   display: flex;
   align-items: center;
+  justify-content: flex-start;
   gap: 0.75rem;
   width: 100%;
-  padding: 0.65rem 0.75rem;
-  border-radius: 8px;
-  border: 1px solid transparent;
+  padding: 0.7rem 0.95rem;
+  border-radius: 12px;
+  border: none;
   background: transparent;
   color: var(--color-text-secondary);
-  font-size: 0.9rem;
-  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
 }
 
 button.item:hover,
@@ -24,43 +26,38 @@ button.item:focus-visible {
   outline-offset: 1px;
 }
 
+/* Estado activo — fondo sólido como en referencia */
 .itemActive {
-  background: color-mix(in srgb, var(--color-primary) 16%, transparent);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+  background: color-mix(in srgb, var(--cicia-blue, #3A5BF3) 16%, transparent);
+  color: var(--color-text);
   font-weight: 600;
 }
 
-.itemActive:hover {
-  background: color-mix(in srgb, var(--color-primary) 22%, transparent);
-  color: var(--color-primary);
+button.itemActive:hover {
+  background: color-mix(in srgb, var(--cicia-blue, #3A5BF3) 22%, transparent);
+  color: var(--color-text);
 }
 
 .itemDisabled {
   color: var(--color-text-muted);
-  cursor: not-allowed;
+  cursor: default;
   user-select: none;
 }
 
 .icon {
   flex-shrink: 0;
+  opacity: 0.7;
+}
+
+.itemActive .icon {
+  opacity: 1;
+  color: var(--color-primary);
 }
 
 .label {
-  flex: 1;
-  overflow: hidden;
-  text-overflow: ellipsis;
   white-space: nowrap;
 }
 
 .badge {
-  flex-shrink: 0;
-  font-size: 0.65rem;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.02em;
-  padding: 0.15rem 0.45rem;
-  border-radius: 999px;
-  background: var(--color-surface-muted);
-  color: var(--color-text-muted);
+  display: none;
 }

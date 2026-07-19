@@ -7,21 +7,17 @@ import { ChartRenderer } from "./ChartRenderer";
 import type { ChartProps } from "./ChartRenderer";
 import {
   Send,
-  Sparkles,
   User,
-  PieChart,
-  TrendingUp,
-  Zap,
-  Coins,
   FileText,
+  TrendingUp,
+  Star,
+  Target,
+  ArrowRight,
 } from "lucide-react";
+import { CiciaIcon } from "./CiciaBranding";
 import styles from "./ChatPanel.module.css";
 
-// Configure marked for clean output
-marked.setOptions({
-  breaks: true,
-  gfm: true,
-});
+marked.setOptions({ breaks: true, gfm: true });
 
 interface ChatPanelProps {
   messages: UIMessage[];
@@ -31,44 +27,23 @@ interface ChatPanelProps {
   loadedDocsCount?: number;
 }
 
-/* ─── Hook: efecto typewriter para texto streaming ─── */
+/* ─── Typewriter hook ─── */
 function useTypewriter(text: string, isStreaming: boolean, charsPerTick = 4): string {
-  // Si el componente monta con isStreaming=true, entra en modo typewriter.
-  // Si monta con false (mensajes previos), muestra el texto completo.
   const isTypewriterMode = useRef(isStreaming);
-  const [revealedLen, setRevealedLen] = useState(() =>
-    isStreaming ? 0 : text.length,
-  );
-
-  // Tick del typewriter: sigue revelando incluso después de que termine el streaming
+  const [revealedLen, setRevealedLen] = useState(() => isStreaming ? 0 : text.length);
   useEffect(() => {
     if (!isTypewriterMode.current || revealedLen >= text.length) return;
-
-    const timer = setTimeout(() => {
-      setRevealedLen((prev) => Math.min(prev + charsPerTick, text.length));
-    }, 25);
-
+    const timer = setTimeout(() => setRevealedLen((p) => Math.min(p + charsPerTick, text.length)), 25);
     return () => clearTimeout(timer);
   }, [revealedLen, text.length, charsPerTick]);
-
-  // Mensajes previos: mostrar todo inmediatamente
   if (!isTypewriterMode.current) return text;
-
   return text.slice(0, revealedLen);
 }
 
-/** Renders a single block of markdown text with optional typewriter effect */
-function MarkdownBlock({
-  text,
-  isStreaming = false,
-}: {
-  text: string;
-  isStreaming?: boolean;
-}) {
+function MarkdownBlock({ text, isStreaming = false }: { text: string; isStreaming?: boolean }) {
   const displayedText = useTypewriter(text, isStreaming);
   const isRevealing = isStreaming && displayedText.length < text.length;
   const html = useMemo(() => marked.parse(displayedText) as string, [displayedText]);
-
   return (
     <div className={styles.markdownContent}>
       <div dangerouslySetInnerHTML={{ __html: html }} />
@@ -77,315 +52,219 @@ function MarkdownBlock({
   );
 }
 
-/** Renders all parts of an assistant message (text + charts) */
-function AssistantMessage({
-  parts,
-  isStreaming,
-}: {
-  parts: UIMessage["parts"];
-  isStreaming: boolean;
-}) {
+function AssistantMessage({ parts, isStreaming }: { parts: UIMessage["parts"]; isStreaming: boolean }) {
   return (
     <>
-      {parts.map((part, index) => {
-        if (part.type === "text") {
-          return (
-            <MarkdownBlock
-              key={index}
-              text={part.text}
-              isStreaming={isStreaming}
-            />
-          );
-        }
-
-        if (part.type === "tool-renderChart") {
-          const chartData = (part.input ?? {}) as ChartProps;
-          return <ChartRenderer key={index} {...chartData} />;
-        }
-
+      {parts.map((part, i) => {
+        if (part.type === "text") return <MarkdownBlock key={i} text={part.text} isStreaming={isStreaming} />;
+        if (part.type === "tool-renderChart") return <ChartRenderer key={i} {...(part.input ?? {}) as ChartProps} />;
         return null;
       })}
     </>
   );
 }
 
-export function ChatPanel({
-  messages,
-  isBusy,
-  error,
-  onSendMessage,
-  loadedDocsCount,
-}: ChatPanelProps) {
+export function ChatPanel({ messages, isBusy, error, onSendMessage, loadedDocsCount }: ChatPanelProps) {
   const [input, setInput] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  // Auto-scroll al final cuando llegan mensajes nuevos o durante streaming/typewriter
   useEffect(() => {
-    const container = document.getElementById("chat-messages");
-    if (!container) return;
-
-    const isAtBottom = () => {
-      const threshold = 150; // px
-      return container.scrollHeight - container.scrollTop - container.clientHeight < threshold;
-    };
-
-    const observer = new MutationObserver(() => {
-      if (isAtBottom()) {
-        container.scrollTop = container.scrollHeight;
-      }
-    });
-
-    observer.observe(container, {
-      childList: true,
-      subtree: true,
-      characterData: true,
-    });
-
+    const c = document.getElementById("chat-messages");
+    if (!c) return;
+    const atBottom = () => c.scrollHeight - c.scrollTop - c.clientHeight < 150;
+    const obs = new MutationObserver(() => { if (atBottom()) c.scrollTop = c.scrollHeight; });
+    obs.observe(c, { childList: true, subtree: true, characterData: true });
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-
-    return () => {
-      observer.disconnect();
-    };
+    return () => obs.disconnect();
   }, [messages, isBusy]);
 
-  function handleSubmit(event: FormEvent) {
-    event.preventDefault();
-    const trimmed = input.trim();
-    if (!trimmed || isBusy) return;
-
-    onSendMessage(trimmed);
+  function handleSubmit(e: FormEvent) {
+    e.preventDefault();
+    const t = input.trim();
+    if (!t || isBusy) return;
+    onSendMessage(t);
     setInput("");
   }
 
   const isTokenLimit = useMemo(() => {
     if (!error) return false;
-    const msg = error.message ? error.message.toLowerCase() : "";
-    return (
-      msg.includes("tokens per minute") ||
-      msg.includes("too many tokens") ||
-      msg.includes("token_quota_exceeded") ||
-      msg.includes("rate limit") ||
-      msg.includes("quota_exceeded") ||
-      msg.includes("429")
-    );
+    const m = error.message?.toLowerCase() ?? "";
+    return m.includes("tokens per minute") || m.includes("too many tokens") || m.includes("token_quota_exceeded") || m.includes("rate limit") || m.includes("quota_exceeded") || m.includes("429");
   }, [error]);
 
   const quickActions = [
-    {
-      title: "Analizar gastos",
-      description: "Identificar los mayores gastos del mes actual.",
-      prompt: "¿Cuáles son mis gastos más altos este mes?",
-      icon: PieChart,
-      color: "#3b82f6",
-    },
-    {
-      title: "Proyectar ventas",
-      description: "Hacer una proyección de ventas para el trimestre.",
-      prompt: "Haz una proyección de mis ventas para este trimestre basada en los datos.",
-      icon: TrendingUp,
-      color: "#10b981",
-    },
-    {
-      title: "Optimizar operación",
-      description: "Buscar áreas de mejora operativa y ahorro.",
-      prompt: "¿Qué áreas de mi negocio muestran oportunidades de optimización?",
-      icon: Zap,
-      color: "#f59e0b",
-    },
-    {
-      title: "Flujo de caja",
-      description: "Evaluar la salud de los ingresos y egresos.",
-      prompt: "Dame un diagnóstico rápido sobre la salud de mi flujo de caja.",
-      icon: Coins,
-      color: "#8b5cf6",
-    },
+    { text: "¿Cómo va el rendimiento de ventas este mes?", prompt: "¿Cómo va el rendimiento de ventas este mes?", color: "#3A5BF3" },
+    { text: "¿Qué oportunidades tienen mayor probabilidad?", prompt: "¿Qué oportunidades tienen mayor probabilidad de cierre?", color: "#9546F3" },
+    { text: "Genera un resumen de mis reuniones recientes", prompt: "Genera un resumen de mis reuniones recientes.", color: "#00CAB5" },
+    { text: "Recomiéndame próximas acciones para mis negocios", prompt: "Recomiéndame las próximas acciones más importantes para mis negocios.", color: "#3A5BF3" },
   ];
 
-  function handleQuickAction(prompt: string) {
-    if (isBusy) return;
-    onSendMessage(prompt);
-  }
+  const insights = [
+    { label: "Oportunidad destacada", Icon: Star, color: "#9546F3", desc: "DataCorp tiene 85% de probabilidad de cierre.", link: "Ver análisis" },
+    { label: "Rendimiento de ventas", Icon: TrendingUp, color: "#3A5BF3", desc: "Has cerrado 32% más negocios este mes.", link: "Ver reporte" },
+    { label: "Recomendación IA", Icon: Target, color: "#00CAB5", desc: "Enfócate en 3 oportunidades con alto potencial.", link: "Ver oportunidades" },
+  ];
+
+  function handleQuickAction(prompt: string) { if (!isBusy) onSendMessage(prompt); }
+
+  const isWelcome = messages.length === 0;
 
   return (
     <section className={styles.chatPanel}>
-      {/* Cabecera del Chat Premium */}
-      <div className={styles.chatHeader}>
-        <div className={styles.headerInfo}>
-          <div className={styles.avatarMini}>
-            <Sparkles size={14} />
-          </div>
-          <div>
-            <h3 className={styles.headerTitle}>Asistente de Negocios</h3>
-            <div className={styles.modelStatus}>
-              <span className={styles.pulseDot} />
-              <span>Cerebras gpt-oss-120b</span>
+      {/* Header solo en chat */}
+      {!isWelcome && (
+        <div className={styles.chatHeader}>
+          <div className={styles.headerInfo}>
+            <div className={styles.avatarMini}>
+              <CiciaIcon size={18} />
             </div>
+            <div>
+              <h3 className={styles.headerTitle}>Asistente de Negocios</h3>
+              <div className={styles.modelStatus}>
+                <span className={styles.pulseDot} />
+                <span>Cerebras gpt-oss-120b</span>
+              </div>
+            </div>
+          </div>
+          {loadedDocsCount !== undefined && (
+            <div className={styles.headerContext}>
+              <FileText size={13} />
+              <span>{loadedDocsCount} {loadedDocsCount === 1 ? "documento" : "documentos"}</span>
+            </div>
+          )}
+        </div>
+      )}
+
+      {isWelcome ? (
+        /* ═══ WELCOME SCREEN ═══ */
+        <div className={styles.welcomeScreen}>
+          {/* Animated aura blobs */}
+          <div className={styles.auraContainer} aria-hidden="true">
+            <div className={styles.auraBlob1} />
+            <div className={styles.auraBlob2} />
+            <div className={styles.auraBlob3} />
+          </div>
+
+          <div className={styles.welcomeContent}>
+            <div className={styles.welcomeHero}>
+              <p className={styles.welcomeGreeting}>Hola, Alex 👋</p>
+              <h1 className={styles.welcomeTitle}>
+                ¿En qué puedo ayudarte <span className={styles.accent}>hoy?</span>
+              </h1>
+            </div>
+
+            {/* Input centrado */}
+            <form className={styles.welcomeForm} onSubmit={handleSubmit}>
+              <div className={styles.welcomeInputWrap}>
+                <input
+                  className={styles.input}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Pregunta algo a tu asistente IA..."
+                  disabled={isBusy}
+                />
+                <button className={styles.sendBtn} type="submit" disabled={isBusy || !input.trim()} title="Enviar">
+                  <Send size={15} />
+                </button>
+              </div>
+            </form>
+
+            {/* Quick actions 2×2 */}
+            <div className={styles.qaGrid}>
+              {quickActions.map((qa, i) => (
+                <button key={i} type="button" className={styles.qaBtn} onClick={() => handleQuickAction(qa.prompt)} disabled={isBusy}>
+                  <span className={styles.qaDot} style={{ background: qa.color }} />
+                  <span className={styles.qaText}>{qa.text}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Insights */}
+            <div className={styles.insightsSection}>
+              <div className={styles.insightsHead}>
+                <h2 className={styles.insightsTitle}>Insights generados por IA</h2>
+                <button type="button" className={styles.seeAll}>Ver todos</button>
+              </div>
+              <div className={styles.insightsGrid}>
+                {insights.map((ins, i) => {
+                  const I = ins.Icon;
+                  return (
+                    <div key={i} className={styles.insightCard}>
+                      <div className={styles.insightTop}>
+                        <div className={styles.insightIcon} style={{ background: `${ins.color}1A`, color: ins.color }}>
+                          <I size={16} />
+                        </div>
+                        <span className={styles.insightLabel}>{ins.label}</span>
+                      </div>
+                      <p className={styles.insightDesc}>{ins.desc}</p>
+                      <button type="button" className={styles.insightLink} style={{ color: ins.color }} onClick={() => handleQuickAction(ins.desc)}>
+                        {ins.link} <ArrowRight size={12} />
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+
+            <p className={styles.hint}>La IA de CICIA aprende de tus datos para darte mejores resultados.</p>
           </div>
         </div>
-        {loadedDocsCount !== undefined && (
-          <div className={styles.headerContext}>
-            <FileText size={13} />
-            <span>
-              {loadedDocsCount} {loadedDocsCount === 1 ? "documento" : "documentos"} de contexto
-            </span>
-          </div>
-        )}
-      </div>
-
-      <div className={styles.messages} id="chat-messages">
-        {messages.length === 0 ? (
-          /* Pantalla de Bienvenida Estilo Hero */
-          <div className={styles.welcomeContainer}>
-            <div className={styles.welcomeHero}>
-              <div className={styles.welcomeLogo}>
-                <Sparkles size={32} />
-              </div>
-              <h2 className={styles.welcomeTitle}>¿Cómo puedo ayudarte hoy?</h2>
-              <p className={styles.welcomeSubtitle}>
-                Analiza los documentos locales de tu organización, diagnostica estados financieros y genera gráficos interactivos automáticamente.
-              </p>
-            </div>
-
-            <div className={styles.quickActionsGrid}>
-              {quickActions.map((action, i) => {
-                const ActionIcon = action.icon;
-                return (
-                  <button
-                    key={i}
-                    type="button"
-                    className={styles.quickActionCard}
-                    onClick={() => handleQuickAction(action.prompt)}
-                    disabled={isBusy}
-                  >
-                    <div className={styles.quickActionHeader}>
-                      <span
-                        className={styles.quickActionIconWrapper}
-                        style={{
-                          backgroundColor: `${action.color}15`,
-                          color: action.color,
-                        }}
-                      >
-                        <ActionIcon size={16} />
-                      </span>
-                      <h4 className={styles.quickActionTitle}>{action.title}</h4>
+      ) : (
+        /* ═══ CHAT MODE ═══ */
+        <>
+          <div className={styles.messages} id="chat-messages">
+            {messages.map((msg, idx) => {
+              const isUser = msg.role === "user";
+              return (
+                <div key={msg.id} className={`${styles.messageRow} ${isUser ? styles.rowUser : styles.rowAssistant}`}>
+                  {!isUser && (
+                    <div className={styles.avatarAssistant}>
+                      <CiciaIcon size={20} />
                     </div>
-                    <p className={styles.quickActionDesc}>{action.description}</p>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : (
-          messages.map((message, msgIndex) => {
-            const isUser = message.role === "user";
-            return (
-              <div
-                key={message.id}
-                className={`${styles.messageRow} ${
-                  isUser ? styles.rowUser : styles.rowAssistant
-                }`}
-              >
-                {!isUser && (
-                  <div className={styles.avatarAssistant}>
-                    <Sparkles size={14} />
-                  </div>
-                )}
-
-                <div
-                  className={`${styles.bubble} ${
-                    isUser ? styles.bubbleUser : styles.bubbleAssistant
-                  }`}
-                >
-                  {isUser ? (
-                    message.parts.map((part, index) =>
-                      part.type === "text" ? (
-                        <span key={index} className={styles.userText}>
-                          {part.text}
-                        </span>
-                      ) : null
-                    )
-                  ) : (
-                    <AssistantMessage
-                      parts={message.parts}
-                      isStreaming={isBusy && msgIndex === messages.length - 1}
-                    />
                   )}
-                </div>
-
-                {isUser && (
-                  <div className={styles.avatarUser}>
-                    <User size={14} />
+                  <div className={`${styles.bubble} ${isUser ? styles.bubbleUser : styles.bubbleAssistant}`}>
+                    {isUser ? msg.parts.map((p, j) => p.type === "text" ? <span key={j} className={styles.userText}>{p.text}</span> : null)
+                      : <AssistantMessage parts={msg.parts} isStreaming={isBusy && idx === messages.length - 1} />}
                   </div>
-                )}
-              </div>
-            );
-          })
-        )}
-
-        {isBusy && messages[messages.length - 1]?.role === "user" && (
-          <div className={`${styles.messageRow} ${styles.rowAssistant}`}>
-            <div className={styles.avatarAssistant}>
-              <Sparkles size={14} />
-            </div>
-            <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
-              <div className={styles.bouncingLoader}>
-                <span className={styles.dot} />
-                <span className={styles.dot} />
-                <span className={styles.dot} />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {error && (
-          <div
-            className={`${styles.messageRow} ${
-              isTokenLimit ? styles.warningRow : styles.errorRow
-            }`}
-          >
-            <div className={`${styles.bubble} ${isTokenLimit ? styles.warning : styles.error}`}>
-              {isTokenLimit ? (
-                <div className={styles.errorContent}>
-                  <span className={styles.errorIcon}>⏳</span>
-                  <div className={styles.errorText}>
-                    <strong className={styles.errorTitle}>Límite de consultas alcanzado</strong>
-                    <p className={styles.errorDescription}>
-                      No hay tokens disponibles para la consulta en este momento. Por favor, espera un minuto e inténtalo de nuevo.
-                    </p>
-                  </div>
+                  {isUser && <div className={styles.avatarUser}><User size={14} /></div>}
                 </div>
-              ) : (
-                <span>Error: {error.message}</span>
-              )}
-            </div>
+              );
+            })}
+            {isBusy && messages[messages.length - 1]?.role === "user" && (
+              <div className={`${styles.messageRow} ${styles.rowAssistant}`}>
+                <div className={styles.avatarAssistant}>
+                  <CiciaIcon size={20} />
+                </div>
+                <div className={`${styles.bubble} ${styles.bubbleAssistant}`}>
+                  <div className={styles.bouncingLoader}><span className={styles.dot} /><span className={styles.dot} /><span className={styles.dot} /></div>
+                </div>
+              </div>
+            )}
+            {error && (
+              <div className={`${styles.messageRow} ${isTokenLimit ? styles.warningRow : styles.errorRow}`}>
+                <div className={`${styles.bubble} ${isTokenLimit ? styles.warning : styles.error}`}>
+                  {isTokenLimit ? (
+                    <div className={styles.errorContent}>
+                      <span className={styles.errorIcon}>⏳</span>
+                      <div className={styles.errorText}>
+                        <strong className={styles.errorTitle}>Límite alcanzado</strong>
+                        <p className={styles.errorDescription}>Espera un minuto e inténtalo de nuevo.</p>
+                      </div>
+                    </div>
+                  ) : <span>Error: {error.message}</span>}
+                </div>
+              </div>
+            )}
+            <div ref={messagesEndRef} />
           </div>
-        )}
-
-        {/* Anchor invisible para auto-scroll */}
-        <div ref={messagesEndRef} />
-      </div>
-
-      <form className={styles.form} onSubmit={handleSubmit}>
-        <input
-          className={styles.input}
-          value={input}
-          onChange={(event) => setInput(event.target.value)}
-          placeholder={
-            loadedDocsCount && loadedDocsCount > 0
-              ? "Haz una pregunta sobre tus documentos..."
-              : "Escribe tu pregunta..."
-          }
-          disabled={isBusy}
-        />
-        <button
-          className={styles.sendButton}
-          type="submit"
-          disabled={isBusy || !input.trim()}
-          title="Enviar mensaje"
-        >
-          <Send size={16} />
-        </button>
-      </form>
+          <form className={styles.bottomForm} onSubmit={handleSubmit}>
+            <div className={styles.bottomInputWrap}>
+              <input className={styles.input} value={input} onChange={(e) => setInput(e.target.value)} placeholder="Pregunta algo a tu asistente IA..." disabled={isBusy} />
+              <button className={styles.sendBtn} type="submit" disabled={isBusy || !input.trim()} title="Enviar"><Send size={15} /></button>
+            </div>
+          </form>
+        </>
+      )}
     </section>
   );
 }
