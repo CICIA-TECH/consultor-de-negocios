@@ -175,6 +175,17 @@ npm run build
 
 ---
 
+## 💬 Feedback de Stakeholders
+
+Canal de retroalimentación durante la etapa de validación del MVP: se comparte el link de producción por WhatsApp, y el feedback se registra en un **Google Sheet** — un slide por cada pantallazo de la app, con los comentarios dejados directamente encima de cada slide. Se crea un **archivo nuevo por cada versión de la app** (no se reutiliza el mismo Sheet entre versiones).
+
+### Acceso
+
+- El link de **Production** (`consultor-de-negocios.vercel.app`) queda **abierto** por ahora, sin Password Protection — es lo único que se comparte con stakeholders.
+- Los **Preview Deployments** (generados por rama/PR) quedan reservados para los **desarrolladores** — se usan para revisar cambios antes de mergear a `main`, no se comparten con stakeholders.
+
+---
+
 ## 📈 Vercel Speed Insights
 
 Herramienta de Vercel para medir el rendimiento real (Real User Monitoring) del sitio en producción, en base a las visitas reales de los usuarios (no solo tests sintéticos).

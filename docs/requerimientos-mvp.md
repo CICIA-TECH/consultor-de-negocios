@@ -87,6 +87,8 @@ No se requiere navegación entre páginas para el MVP — todo ocurre en `/`.
 ## 9. Próximos pasos (Fase 2, referencia)
 
 - Login con usuario/contraseña por empresa.
+- **Cuotas/rate limit por usuario:** una vez implementado el login, establecer límites de uso de la IA por usuario/empresa (ej. cantidad de preguntas por día), ya que hasta ahora la única mitigación de consumo es a nivel de key de Cerebras compartida, no por usuario individual. Requiere registrar el consumo asociado a cada `user_id` (probablemente en Supabase, ver `lib/supabase/` ya reservado para esta fase).
+- **Trazabilidad de uso/costos por usuario:** una vez implementado el login, registrar qué usuario/empresa generó cada consulta a la IA (cantidad de llamadas, tokens/costo aproximado por llamada) para poder atribuir el consumo de la `CEREBRAS_API_KEY` de producción a cuentas específicas — hoy solo se puede ver el consumo agregado total en el dashboard de Cerebras, sin poder distinguir qué usuario lo generó. Comparte la misma base de datos/tabla de registro de uso que las cuotas por usuario.
 - Subida de documentos a Supabase Storage en vez de carpeta local.
 - Persistencia de conversaciones e historial por empresa.
 - Búsqueda semántica (RAG/pgvector) sobre la base de conocimientos completa de cada empresa.
