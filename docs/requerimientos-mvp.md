@@ -47,7 +47,7 @@ No hay autenticación ni almacenamiento en la nube todavía: el MVP es una herra
 5. El usuario puede seguir preguntando libremente; no hay un diagnóstico inicial automático.
 6. Si no hay documentos cargados, el chat lo indica y sugiere seleccionar una carpeta primero.
 
-## 5. Pantallas (UI)
+## 5. Pantallas (UI) 
 
 Una sola pantalla (single view), dividida en:
 
