@@ -15,6 +15,7 @@ import {
   ArrowRight,
 } from "lucide-react";
 import { CiciaIcon } from "./CiciaBranding";
+import { DAILY_MESSAGE_LIMIT, DAILY_LIMIT_MARKER } from "@/lib/quota";
 import styles from "./ChatPanel.module.css";
 
 marked.setOptions({ breaks: true, gfm: true });
@@ -86,11 +87,15 @@ export function ChatPanel({ messages, isBusy, error, onSendMessage, loadedDocsCo
     setInput("");
   }
 
+  const isDailyLimit = useMemo(() => {
+    return error?.message?.includes(DAILY_LIMIT_MARKER) ?? false;
+  }, [error]);
+
   const isTokenLimit = useMemo(() => {
-    if (!error) return false;
+    if (!error || isDailyLimit) return false;
     const m = error.message?.toLowerCase() ?? "";
     return m.includes("tokens per minute") || m.includes("too many tokens") || m.includes("token_quota_exceeded") || m.includes("rate limit") || m.includes("quota_exceeded") || m.includes("429");
-  }, [error]);
+  }, [error, isDailyLimit]);
 
   const quickActions = [
     { text: "¿Cómo va el rendimiento de ventas este mes?", prompt: "¿Cómo va el rendimiento de ventas este mes?", color: "#3A5BF3" },
@@ -241,9 +246,19 @@ export function ChatPanel({ messages, isBusy, error, onSendMessage, loadedDocsCo
               </div>
             )}
             {error && (
-              <div className={`${styles.messageRow} ${isTokenLimit ? styles.warningRow : styles.errorRow}`}>
-                <div className={`${styles.bubble} ${isTokenLimit ? styles.warning : styles.error}`}>
-                  {isTokenLimit ? (
+              <div className={`${styles.messageRow} ${isTokenLimit || isDailyLimit ? styles.warningRow : styles.errorRow}`}>
+                <div className={`${styles.bubble} ${isTokenLimit || isDailyLimit ? styles.warning : styles.error}`}>
+                  {isDailyLimit ? (
+                    <div className={styles.errorContent}>
+                      <span className={styles.errorIcon}>📅</span>
+                      <div className={styles.errorText}>
+                        <strong className={styles.errorTitle}>Límite diario alcanzado</strong>
+                        <p className={styles.errorDescription}>
+                          Usaste tus {DAILY_MESSAGE_LIMIT} mensajes de hoy. Vuelve mañana para seguir consultando.
+                        </p>
+                      </div>
+                    </div>
+                  ) : isTokenLimit ? (
                     <div className={styles.errorContent}>
                       <span className={styles.errorIcon}>⏳</span>
                       <div className={styles.errorText}>

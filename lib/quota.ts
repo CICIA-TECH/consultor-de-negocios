@@ -1,0 +1,2 @@
+export const DAILY_MESSAGE_LIMIT = 20;
+export const DAILY_LIMIT_MARKER = "DAILY_LIMIT_REACHED";

@@ -30,7 +30,7 @@ Nos enfocamos en los pilares fundamentales para validar el valor del producto:
 ### 3. Resultados
 - **Panel de resultados:** Visualización simple y clara de los diagnósticos generados.
 
-*Nota: El login/autenticación de usuarios está planificado para una fase posterior. El MVP no requiere autenticación funcional.*
+*Nota: El login/autenticación de usuarios (Fase 2, issue #8) ya está implementado — ver sección [🔐 Autenticación](#-autenticación) más abajo.*
 
 ---
 
@@ -70,7 +70,7 @@ A partir de este principio, estructuramos nuestro trabajo en:
 - **Despliegue:** Vercel.
 - **Tooling de desarrollo:** [Vercel Plugin para Claude Code](https://github.com/vercel/vercel-plugin) — da acceso a skills/comandos de Vercel (CLI, deploys, logs, storage) directamente dentro de Claude Code.
 
-*Nota: Supabase (base de datos, auth, storage) está integrado en el proyecto pero aún no conectado al flujo del MVP — queda reservado para la Fase 2. La versión actual del MVP lee documentos desde una carpeta local del navegador.*
+*Nota: Supabase Auth (login por usuario) ya está conectado — ver [🔐 Autenticación](#-autenticación). El resto de Supabase (storage, persistencia de conversaciones) sigue reservado para issues posteriores de la Fase 2. La carga de documentos sigue leyendo desde una carpeta local del navegador hasta que se implemente el issue #11.*
 
 ---
 
@@ -123,10 +123,27 @@ Reiniciar Claude Code después de instalar para que cargue el plugin.
 
 **Usar:** una vez instalado, invocar los skills disponibles (ej. `vercel-cli`, `vercel-connect`, `vercel-storage`) directamente pidiéndole a Claude Code que gestione algo del proyecto en Vercel (deploy, logs, env vars).
 
-### Setup de Supabase (Fase 2)
+### Setup de Supabase
 
 1. Crear un proyecto en [supabase.com](https://supabase.com).
+   - **Nombre:** CICIA Project.
+   - **Región:** South America (São Paulo) — más cercana a la base de usuarios (Chile/LatAm); sin impacto conocido en el resto del stack (Vercel/Cerebras son independientes de esta región).
+   - **Data API:** habilitada — la app usa `.from()` de supabase-js (vía PostgREST) para leer/escribir `profiles` y las tablas que agreguen los issues #9/#10/#12, no solo el API de Auth.
+   - **Automatically expose new tables:** habilitado — coincide con cómo se escriben las migraciones del proyecto (`create table public...` sin paso extra de exposición).
+   - **Enable automatic RLS:** habilitado — red de seguridad para tablas futuras (cuotas, uso, conversaciones) que no incluyan `enable row level security` explícito en su propio script, evitando que queden expuestas por defecto. `profiles.sql` ya lo activa explícitamente para `profiles`, así que aquí es redundante pero no tiene costo.
 2. Agregar `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en `.env.local`.
+3. Vincular el proyecto y aplicar las migraciones con la Supabase CLI (crea la tabla `profiles`, el trigger que la puebla en cada signup, y las políticas de RLS — ver `supabase/migrations/`):
+   ```bash
+   npm install -g supabase
+   supabase login          # autenticación vía navegador, no requiere pegar tokens
+   supabase link --project-ref <project-ref>
+   supabase db push
+   ```
+4. En **Authentication → Email Templates → Confirm signup**, reemplazar el link por defecto para que apunte a la ruta de confirmación de la app:
+   ```
+   {{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup
+   ```
+   Esto es necesario para que `app/auth/confirm/route.ts` reciba `token_hash`/`type` y pueda validar el signup.
 
 ### Cómo se creó este proyecto
 
@@ -152,6 +169,35 @@ npm run build
 
 ---
 
+## 🔐 Autenticación
+
+Login por usuario (usuario/contraseña) vía **Supabase Auth**, issue #8.
+
+### Flujo
+
+1. **Registro (`/registro`):** el usuario crea una cuenta con email/contraseña (`components/RegistroForm.tsx`, `supabase.auth.signUp`). El auto-registro es **abierto** (no requiere invitación), pero exige **confirmación de email** antes de poder iniciar sesión.
+2. **Confirmación (`/auth/confirm`):** al hacer click en el link del correo, `app/auth/confirm/route.ts` valida el `token_hash` recibido (`supabase.auth.verifyOtp`) y redirige a `/`.
+3. **Login (`/login`):** `components/LoginForm.tsx` llama a `supabase.auth.signInWithPassword`.
+4. **Protección de rutas:** `middleware.ts` (raíz) llama a `updateSession` (`lib/supabase/middleware.ts`) en cada request y redirige a `/login` cualquier ruta que no sea `/login`, `/registro` o `/auth/*` si no hay sesión. `app/page.tsx` además verifica la sesión del lado del servidor como segunda capa.
+5. **Logout:** botón en el Sidebar (`components/LogoutButton.tsx`) que llama a `supabase.auth.signOut()`.
+6. **API protegida:** `app/api/chat/route.ts` valida la sesión al inicio del handler y responde `401` si no hay usuario autenticado — protección adicional más allá del middleware, por si el matcher de rutas cambia en el futuro.
+
+### Tabla `profiles`
+
+Definida en `supabase/migrations/..._create_profiles.sql` (aplicar con `supabase db push`, ver [Setup de Supabase](#setup-de-supabase)). Un trigger crea automáticamente una fila en `profiles` por cada nuevo usuario de `auth.users`.
+
+Incluye una columna **`plan`** (`default 'free'`) desde ahora, aunque todavía no hay planes pagos — la idea es que cuando se agregue la integración de pagos (issue futuro, no creado aún), ese ticket solo necesite agregar el checkout/webhook que actualiza `plan`, sin tener que rediseñar el modelo de usuario.
+
+### Por qué auto-registro abierto (no invite-only)
+
+El roadmap incluye planes de pago futuros, que requieren un flujo self-serve (registro → elegir plan → pagar → acceder). Un modelo invite-only obligaría a dar de alta manualmente a cada usuario pagante, lo cual no escala con ese modelo de negocio.
+
+### Cuota de uso
+
+Cada usuario autenticado tiene un límite de 20 mensajes/día (issue #9) — ver [Cuota diaria por usuario](#cuota-diaria-por-usuario-issue-9) más abajo.
+
+---
+
 ## 📂 Estructura
 
 - `app/` — App Router (layouts, páginas, route handlers).
@@ -163,7 +209,7 @@ npm run build
 - `lib/supabase/` — Clientes de Supabase para browser (`client.ts`), server components (`server.ts`) y middleware (`middleware.ts`), listos para cuando se conecte Supabase.
 - `docs/` — Base de conocimientos y especificaciones.
 
-*Nota: `middleware.ts` (refresco de sesión de Supabase en cada request) está desactivado temporalmente porque el MVP aún no usa Supabase. Para reactivarlo, crear `middleware.ts` en la raíz a partir de `lib/supabase/middleware.ts` (ver guía SSR en Documentación) y configurar `.env.local`.*
+*Nota: `middleware.ts` en la raíz refresca la sesión de Supabase en cada request y protege todas las rutas excepto `/login`, `/registro` y `/auth/*` — ver [🔐 Autenticación](#-autenticación).*
 
 ---
 
@@ -275,6 +321,15 @@ Para ofrecer una experiencia de usuario fluida y transparente, el sistema maneja
 1. **Propagación del Error (Backend):** Por defecto, el Vercel AI SDK enmascara los errores del servidor retornando un genérico `"An error occurred."`. Hemos configurado el callback `onError` en `toUIMessageStreamResponse` (`app/api/chat/route.ts`) para propagar el mensaje de error original del proveedor al cliente.
 2. **Detección en el Cliente (Frontend):** En `components/ChatPanel.tsx`, evaluamos el mensaje de error para detectar patrones de límite de cuota (como `tokens per minute`, `quota_exceeded` o `429`).
 3. **Banner de Advertencia Premium:** En lugar de lanzar una pantalla de error o texto genérico en rojo, se despliega un banner de advertencia elegante con colores de advertencia del sistema (`--color-warning-bg` y `--color-warning-text`), informando al usuario en español que no hay tokens disponibles en ese momento y que debe esperar un minuto antes de reintentar.
+
+### Cuota diaria por usuario (issue #9)
+
+Además del rate-limit de Cerebras (arriba), hay un límite propio de la app: **20 mensajes por día por usuario** (`DAILY_MESSAGE_LIMIT` en `lib/quota.ts`), igual para todos por ahora — no diferenciado por `profiles.plan` todavía.
+
+- **Registro atómico:** cada request a `app/api/chat/route.ts` llama a la función de Postgres `increment_daily_usage()` (definida en `supabase/migrations/..._add_usage_daily.sql`), que incrementa `usage_daily.message_count` para el usuario/día actual y devuelve el nuevo conteo en un solo round-trip — sin condición de carrera entre leer el conteo y decidir si bloquear.
+- **Bloqueo:** si el conteo supera el límite, el endpoint responde `429` con el marcador `DAILY_LIMIT_MARKER` (`lib/quota.ts`) como body, antes de llamar a Cerebras.
+- **UI:** `ChatPanel.tsx` detecta ese marcador en `error.message` (mismo mecanismo que la detección de rate-limit de Cerebras, ver arriba) y muestra un banner distinto: "Límite diario alcanzado".
+- **Fail-open:** si la función de Postgres falla inesperadamente, la request no se bloquea (solo se loguea el error) — se prioriza no cortarle el acceso a un usuario legítimo por un problema de infraestructura.
 
 ---
 
