@@ -7,4 +7,5 @@ export interface NavItemConfig {
   label: string;
   icon: LucideIcon;
   status: NavItemStatus;
+  href?: string;
 }

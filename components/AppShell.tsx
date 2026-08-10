@@ -1,21 +1,22 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { useChat } from "@ai-sdk/react";
-import { ChatPanel } from "@/components/ChatPanel";
 import { Sidebar } from "@/components/Sidebar";
-import { MiEmpresa } from "@/components/MiEmpresa";
-import { Configuracion } from "@/components/Configuracion";
-import { DEFAULT_VIEW_ID, type ViewId } from "@/lib/navigation/config";
+import { AppStateContext } from "@/lib/app-state/context";
 import {
   isFileSystemAccessSupported,
   readDocumentsFromDirectory,
 } from "@/lib/documents/readDirectory";
 import type { DocumentItem } from "@/lib/documents/types";
-import styles from "./page.module.css";
+import styles from "@/app/page.module.css";
 
-export default function Home() {
-  const [activeView, setActiveView] = useState<ViewId>(DEFAULT_VIEW_ID);
+interface AppShellProps {
+  userEmail: string;
+  children: ReactNode;
+}
+
+export function AppShell({ userEmail, children }: AppShellProps) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
   const [isLoadingFolder, setIsLoadingFolder] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
@@ -53,31 +54,25 @@ export default function Home() {
   const isBusy = status === "submitted" || status === "streaming";
 
   return (
-    <div className={styles.page}>
-      <Sidebar activeView={activeView} onSelectView={setActiveView} />
-
-      {activeView === "chat" && (
-        <ChatPanel
-          messages={messages}
-          isBusy={isBusy}
-          error={error}
-          loadedDocsCount={documents.filter((doc) => doc.status === "loaded").length}
-          onSendMessage={(text) =>
-            sendMessage({ text }, { body: { documentContext } })
-          }
-        />
-      )}
-
-      {activeView === "empresa" && (
-        <MiEmpresa
-          documents={documents}
-          isLoading={isLoadingFolder}
-          isSupported={isSupported}
-          onPickFolder={handlePickFolder}
-        />
-      )}
-
-      {activeView === "configuracion" && <Configuracion />}
-    </div>
+    <AppStateContext.Provider
+      value={{
+        documents,
+        isLoadingFolder,
+        isSupported,
+        onPickFolder: handlePickFolder,
+        loadedDocsCount: documents.filter((doc) => doc.status === "loaded")
+          .length,
+        messages,
+        isBusy,
+        error,
+        onSendMessage: (text: string) =>
+          sendMessage({ text }, { body: { documentContext } }),
+      }}
+    >
+      <div className={styles.page}>
+        <Sidebar userEmail={userEmail} />
+        {children}
+      </div>
+    </AppStateContext.Provider>
   );
 }

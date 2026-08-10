@@ -1,17 +1,17 @@
 "use client";
 
+import Link from "next/link";
 import type { NavItemConfig } from "@/lib/navigation/types";
 import styles from "./NavItem.module.css";
 
 interface NavItemProps {
   item: NavItemConfig;
   isActive: boolean;
-  onSelect: (id: string) => void;
 }
 
-export function NavItem({ item, isActive, onSelect }: NavItemProps) {
+export function NavItem({ item, isActive }: NavItemProps) {
   const Icon = item.icon;
-  const isDisabled = item.status === "soon";
+  const isDisabled = item.status === "soon" || !item.href;
 
   if (isDisabled) {
     return (
@@ -28,14 +28,13 @@ export function NavItem({ item, isActive, onSelect }: NavItemProps) {
   }
 
   return (
-    <button
-      type="button"
+    <Link
+      href={item.href!}
       className={`${styles.item} ${isActive ? styles.itemActive : ""}`}
-      onClick={() => onSelect(item.id)}
       aria-current={isActive ? "page" : undefined}
     >
       <Icon className={styles.icon} size={20} aria-hidden="true" />
       <span className={styles.label}>{item.label}</span>
-    </button>
+    </Link>
   );
 }

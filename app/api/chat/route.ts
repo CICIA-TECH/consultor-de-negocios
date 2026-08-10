@@ -1,10 +1,31 @@
 import { cerebras } from "@ai-sdk/cerebras";
 import { streamText, convertToModelMessages, tool } from "ai";
 import { z } from "zod";
+import { createClient } from "@/lib/supabase/server";
+import { DAILY_MESSAGE_LIMIT, DAILY_LIMIT_MARKER } from "@/lib/quota";
 
 export const maxDuration = 30;
 
 export async function POST(req: Request) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    return new Response("No autorizado", { status: 401 });
+  }
+
+  const { data: newCount, error: quotaError } = await supabase.rpc(
+    "increment_daily_usage",
+  );
+
+  if (quotaError) {
+    console.error("Error al registrar cuota de uso:", quotaError);
+  } else if (newCount !== null && newCount > DAILY_MESSAGE_LIMIT) {
+    return new Response(DAILY_LIMIT_MARKER, { status: 429 });
+  }
+
   const { messages, documentContext } = await req.json();
 
   const systemPrompt = `Eres "Consultor IA", un asesor de negocios experto, analítico pero muy amigable y conversacional. Dialogas de forma natural con el usuario para entender su negocio y ayudarlo a tomar mejores decisiones.
