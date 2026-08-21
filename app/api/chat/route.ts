@@ -1,10 +1,18 @@
 import { cerebras } from "@ai-sdk/cerebras";
+import { groq } from "@ai-sdk/groq";
 import { streamText, convertToModelMessages, tool } from "ai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
 import { DAILY_MESSAGE_LIMIT, DAILY_LIMIT_MARKER, estimateCostUsd } from "@/lib/quota";
 
 export const maxDuration = 30;
+
+// Permite pasar temporalmente a Groq (free tier) si se agotan los créditos
+// de Cerebras. Setear AI_PROVIDER=groq en el entorno para activarlo.
+const aiModel =
+  process.env.AI_PROVIDER === "groq"
+    ? groq("openai/gpt-oss-120b")
+    : cerebras("gpt-oss-120b");
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -102,7 +110,7 @@ Responde siempre en español. Sé profesional, directo y práctico.`;
   const modelMessages = await convertToModelMessages(messages);
 
   const result = streamText({
-    model: cerebras("gpt-oss-120b"),
+    model: aiModel,
     system: systemPrompt,
     messages: modelMessages,
     tools: {
