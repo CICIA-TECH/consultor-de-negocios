@@ -340,6 +340,24 @@ Además del conteo diario (arriba), cada llamada a la IA queda registrada en det
 - **Fail-open:** igual que la cuota diaria, un error al registrar no bloquea la respuesta al usuario, solo se loguea.
 - **Reporte interno:** la vista `public.usage_by_user` agrega `usage_log` por usuario (cantidad de requests, tokens totales, costo total). Se consulta desde el SQL Editor de Supabase con el rol `postgres` (no hay UI todavía) — RLS solo deja a cada usuario ver su propia fila, así que el reporte agregado de todos los usuarios requiere bypassear RLS con ese rol.
 
+**Cómo consultar el consumo:**
+
+```sql
+-- Detalle por request
+select * from public.usage_log order by created_at desc;
+
+-- Agregado por usuario
+select * from public.usage_by_user order by total_estimated_cost_usd desc;
+```
+
+También se puede correr desde el CLI local, sin entrar al dashboard:
+
+```
+supabase db query --linked "select * from public.usage_by_user order by total_estimated_cost_usd desc;"
+```
+
+**Estado de la verificación:** el schema (tabla, RLS, vista) se probó manualmente insertando y luego borrando una fila de prueba directo en la base — inserta y agrega bien. La prueba end-to-end real (mandar un mensaje por el chat y confirmar que `onFinish` lo registre solo) quedó pendiente porque la cuenta de Cerebras usada en producción está bloqueada por billing (`Payment required`) — no es un problema de este código, hay que resolverlo en el dashboard de Cerebras antes de poder confirmarlo con tráfico real.
+
 ---
 
 ## ✍️ Visualización y Streaming de Respuestas (Typewriter & Auto-scroll)
