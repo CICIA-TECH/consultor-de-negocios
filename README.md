@@ -70,7 +70,7 @@ A partir de este principio, estructuramos nuestro trabajo en:
 - **Despliegue:** Vercel.
 - **Tooling de desarrollo:** [Vercel Plugin para Claude Code](https://github.com/vercel/vercel-plugin) — da acceso a skills/comandos de Vercel (CLI, deploys, logs, storage) directamente dentro de Claude Code.
 
-*Nota: Supabase Auth (login por usuario) ya está conectado — ver [🔐 Autenticación](#-autenticación). El resto de Supabase (storage, persistencia de conversaciones) sigue reservado para issues posteriores de la Fase 2. La carga de documentos sigue leyendo desde una carpeta local del navegador hasta que se implemente el issue #11.*
+*Nota: Supabase Auth (login por usuario) y Supabase Storage (carga de documentos, issue #11) ya están conectados — ver [🔐 Autenticación](#-autenticación) y la sección de documentos más abajo. La persistencia de conversaciones sigue reservada para un issue posterior de la Fase 2.*
 
 ---
 
@@ -107,9 +107,9 @@ A partir de este principio, estructuramos nuestro trabajo en:
    ```bash
    npm run dev
    ```
-   Abrir [http://localhost:3000](http://localhost:3000) en **Chrome o Edge** (la selección de carpeta usa la File System Access API, no soportada en Firefox/Safari).
+   Abrir [http://localhost:3000](http://localhost:3000) — funciona en cualquier navegador moderno (la carga de documentos ya no depende de la File System Access API, ver issue #11).
 
-4. **Usar el MVP:** Haz click en "Seleccionar carpeta", elige una carpeta local con PDFs o archivos Excel/CSV, y escribe tus preguntas. La IA analizará el contexto usando el modelo `gpt-oss-120b` de Cerebras.
+4. **Usar el MVP:** Haz click en "Subir documentos" (sección "Mi empresa"), elige uno o varios PDFs/Excel/CSV, y escribe tus preguntas. La IA analizará el contexto usando el modelo `gpt-oss-120b` de Cerebras (o Groq, ver más abajo).
 
 ### Vercel Plugin para Claude Code (opcional)
 
@@ -337,6 +337,7 @@ Además del conteo diario (arriba), cada llamada a la IA queda registrada en det
 
 - **Registro por request:** en el callback `onFinish` de `streamText` (`app/api/chat/route.ts`), se inserta una fila en `usage_log` (`supabase/migrations/..._add_usage_log.sql`) con `user_id`, `input_tokens`, `output_tokens`, `total_tokens` y `estimated_cost_usd`.
 - **Costo aproximado:** calculado en `estimateCostUsd()` (`lib/quota.ts`) usando el precio publicado de `gpt-oss-120b` en Cerebras (por millón de tokens) — son valores hardcodeados que hay que revisar si Cerebras cambia su pricing.
+  - ⚠️ **Trabajo futuro:** el cálculo asume siempre pricing de Cerebras, aunque el proveedor activo sea otro (ver `AI_PROVIDER` abajo). Mientras se usa Groq, `estimated_cost_usd` no refleja el costo real — falta parametrizar `estimateCostUsd()` por proveedor.
 - **Fail-open:** igual que la cuota diaria, un error al registrar no bloquea la respuesta al usuario, solo se loguea.
 - **Reporte interno:** la vista `public.usage_by_user` agrega `usage_log` por usuario (cantidad de requests, tokens totales, costo total). Se consulta desde el SQL Editor de Supabase con el rol `postgres` (no hay UI todavía) — RLS solo deja a cada usuario ver su propia fila, así que el reporte agregado de todos los usuarios requiere bypassear RLS con ese rol.
 
@@ -356,7 +357,36 @@ También se puede correr desde el CLI local, sin entrar al dashboard:
 supabase db query --linked "select * from public.usage_by_user order by total_estimated_cost_usd desc;"
 ```
 
-**Estado de la verificación:** el schema (tabla, RLS, vista) se probó manualmente insertando y luego borrando una fila de prueba directo en la base — inserta y agrega bien. La prueba end-to-end real (mandar un mensaje por el chat y confirmar que `onFinish` lo registre solo) quedó pendiente porque la cuenta de Cerebras usada en producción está bloqueada por billing (`Payment required`) — no es un problema de este código, hay que resolverlo en el dashboard de Cerebras antes de poder confirmarlo con tráfico real.
+**Estado de la verificación:** verificado end-to-end en producción — schema (tabla, RLS, vista) probado manualmente y confirmado con tráfico real de chat, que quedó registrado correctamente en `usage_log`.
+
+### Proveedor de IA alternativo (Groq)
+
+La cuenta de Cerebras usada en producción quedó bloqueada por billing (`Payment required`). Como fallback temporal, `app/api/chat/route.ts` permite elegir el proveedor vía variable de entorno:
+
+- `AI_PROVIDER=groq` + `GROQ_API_KEY` → usa Groq (`openai/gpt-oss-120b`, free tier).
+- Cualquier otro valor (o sin setear) → usa Cerebras (comportamiento original).
+
+Notas:
+
+- `@ai-sdk/groq` está pineado a `3.0.60` (tag `ai-v6` en npm), no a `latest` — la versión `latest` (4.x) usa una spec de proveedor (`LanguageModelV4`) incompatible con `ai@6`, que usa este proyecto.
+- Actualmente activado en Vercel para **Production** y **Development** (no en Preview).
+- Ver el ⚠️ de trabajo futuro arriba: mientras está activo Groq, `estimated_cost_usd` en `usage_log` sigue calculado con pricing de Cerebras, no el real de Groq.
+
+---
+
+## 📁 Subida de documentos (issue #11)
+
+Reemplaza la selección de carpeta local (File System Access API, solo Chrome/Edge, no persistía) por subida a **Supabase Storage**, con parseo server-side y persistencia por usuario.
+
+- **Bucket:** `documents` (privado). Cada archivo vive en `{user_id}/{uuid}-{nombre-original}`, protegido por políticas RLS en `storage.objects` que solo dejan a cada usuario leer/subir/borrar dentro de su propia carpeta (`supabase/migrations/..._add_documents_storage.sql`). Límite de 20MB por archivo y `allowed_mime_types` restringido a PDF/Excel/CSV a nivel de bucket.
+- **Metadata:** tabla `public.documents` (`user_id`, `storage_path`, `file_name`, `status`, `content`, `error_message`, `size_bytes`), con la misma RLS por `user_id` que `usage_log`/`usage_daily`.
+- **Flujo de subida** (`lib/documents/uploadDocuments.ts`, client-side): genera un `id` en el cliente (usado de punta a punta — path en Storage, fila en `documents`, key de React — para que cada actualización de estado reemplace la misma fila en vez de duplicarla), sube el archivo a Storage → inserta la fila en `documents` (`status: uploaded`) → llama a `POST /api/documents/parse` → el estado va pasando `uploaded → parsing → loaded` (o `error`) y se refleja en la UI de "Mi empresa" en tiempo real.
+- **`isSupportedFile()` vive aparte** (`lib/documents/supportedFiles.ts`), sin dependencias: si quedara en `parse.ts` junto a `pdfjs-dist`/`xlsx`, el cliente (que necesita esa función para filtrar antes de subir) terminaría empaquetando esas librerías pesadas en el bundle del navegador.
+- **Parseo server-side:** `app/api/documents/parse/route.ts` (runtime Node, no Edge) descarga el archivo de Storage y corre `parseDocument()` (`lib/documents/parse.ts`, reutilizada tal cual, antes corría en el navegador). Para PDFs usa `pdfjs-dist/legacy/build/pdf.mjs` (build compatible con Node). pdf.js resuelve su worker y sus fuentes estándar con paths relativos a sus propios archivos en `node_modules` — si Next.js empaqueta la librería dentro de la API route, esa resolución se rompe (`Setting up fake worker failed`, fuentes no encontradas, texto cortado a la mitad). La solución es marcar `pdfjs-dist` como paquete externo (`serverExternalPackages` en `next.config.ts`) para que corra "tal cual" desde `node_modules`, más `outputFileTracingIncludes` para que Vercel igual empaquete esos archivos (worker + fuentes) en la función serverless.
+- **Persistencia:** `AppShell.tsx` carga los documentos del usuario (`fetchDocuments()`) al montar — es lo que hace que sobrevivan a un refresh o a volver a entrar, a diferencia del picker de carpeta anterior.
+- **Borrado:** botón por documento en "Mi empresa" — borra el objeto de Storage y la fila de `documents` (`deleteDocument()`).
+
+⚠️ **Trabajo futuro:** no hay cuota de almacenamiento total por usuario (solo límite de 20MB por archivo), y no se puede reprocesar un documento ya subido (hay que borrarlo y volver a subirlo).
 
 ---
 

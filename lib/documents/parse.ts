@@ -1,21 +1,16 @@
 import * as XLSX from "xlsx";
 
-const SUPPORTED_EXTENSIONS = ["pdf", "xlsx", "xls", "csv"];
-
 function getExtension(fileName: string): string {
   return fileName.split(".").pop()?.toLowerCase() ?? "";
 }
 
-export function isSupportedFile(fileName: string): boolean {
-  return SUPPORTED_EXTENSIONS.includes(getExtension(fileName));
-}
-
 async function parsePdf(file: File): Promise<string> {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url,
-  ).toString();
+  // Build "legacy" (Node-compatible): sin worker real, corre en el mismo
+  // proceso. Este módulo corre server-side (API route), no en el navegador.
+  // pdf.js resuelve su worker y sus fuentes estándar con paths relativos a
+  // sí mismo — necesita correr "tal cual" desde node_modules (ver
+  // serverExternalPackages en next.config.ts), sin overrides manuales.
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
 
   const arrayBuffer = await file.arrayBuffer();
   const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;

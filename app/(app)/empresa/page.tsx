@@ -4,15 +4,15 @@ import { MiEmpresa } from "@/components/MiEmpresa";
 import { useAppState } from "@/lib/app-state/context";
 
 export default function EmpresaPage() {
-  const { documents, isLoadingFolder, isSupported, onPickFolder } =
+  const { documents, isUploading, onUploadFiles, onDeleteDocument } =
     useAppState();
 
   return (
     <MiEmpresa
       documents={documents}
-      isLoading={isLoadingFolder}
-      isSupported={isSupported}
-      onPickFolder={onPickFolder}
+      isUploading={isUploading}
+      onUploadFiles={onUploadFiles}
+      onDeleteDocument={onDeleteDocument}
     />
   );
 }

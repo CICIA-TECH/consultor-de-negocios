@@ -5,9 +5,10 @@ import { useChat } from "@ai-sdk/react";
 import { Sidebar } from "@/components/Sidebar";
 import { AppStateContext } from "@/lib/app-state/context";
 import {
-  isFileSystemAccessSupported,
-  readDocumentsFromDirectory,
-} from "@/lib/documents/readDirectory";
+  deleteDocument,
+  fetchDocuments,
+  uploadDocument,
+} from "@/lib/documents/uploadDocuments";
 import type { DocumentItem } from "@/lib/documents/types";
 import styles from "@/app/page.module.css";
 
@@ -18,11 +19,10 @@ interface AppShellProps {
 
 export function AppShell({ userEmail, children }: AppShellProps) {
   const [documents, setDocuments] = useState<DocumentItem[]>([]);
-  const [isLoadingFolder, setIsLoadingFolder] = useState(false);
-  const [isSupported, setIsSupported] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
 
   useEffect(() => {
-    setIsSupported(isFileSystemAccessSupported());
+    fetchDocuments().then(setDocuments);
   }, []);
 
   const documentContext = useMemo(() => {
@@ -34,21 +34,32 @@ export function AppShell({ userEmail, children }: AppShellProps) {
 
   const { messages, sendMessage, status, error } = useChat();
 
-  async function handlePickFolder() {
-    setIsLoadingFolder(true);
+  function upsertDocument(doc: DocumentItem) {
+    setDocuments((prev) => {
+      const idx = prev.findIndex((d) => d.id === doc.id);
+      if (idx === -1) return [doc, ...prev];
+      const next = [...prev];
+      next[idx] = doc;
+      return next;
+    });
+  }
+
+  async function handleUploadFiles(files: FileList) {
+    setIsUploading(true);
     try {
-      const directoryHandle = await window.showDirectoryPicker();
-      const loadedDocuments =
-        await readDocumentsFromDirectory(directoryHandle);
-      setDocuments(loadedDocuments);
-    } catch (error) {
-      if (error instanceof DOMException && error.name === "AbortError") {
-        return;
-      }
-      console.error(error);
+      await Promise.all(
+        Array.from(files).map((file) => uploadDocument(file, upsertDocument)),
+      );
     } finally {
-      setIsLoadingFolder(false);
+      setIsUploading(false);
     }
+  }
+
+  async function handleDeleteDocument(id: string) {
+    const doc = documents.find((d) => d.id === id);
+    if (!doc) return;
+    setDocuments((prev) => prev.filter((d) => d.id !== id));
+    await deleteDocument(doc);
   }
 
   const isBusy = status === "submitted" || status === "streaming";
@@ -57,9 +68,9 @@ export function AppShell({ userEmail, children }: AppShellProps) {
     <AppStateContext.Provider
       value={{
         documents,
-        isLoadingFolder,
-        isSupported,
-        onPickFolder: handlePickFolder,
+        isUploading,
+        onUploadFiles: handleUploadFiles,
+        onDeleteDocument: handleDeleteDocument,
         loadedDocsCount: documents.filter((doc) => doc.status === "loaded")
           .length,
         messages,

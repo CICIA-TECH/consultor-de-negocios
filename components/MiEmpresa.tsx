@@ -1,15 +1,20 @@
 "use client";
 
+import { useRef } from "react";
 import type { DocumentItem } from "@/lib/documents/types";
 import styles from "./MiEmpresa.module.css";
 
 const STATUS_LABEL: Record<DocumentItem["status"], string> = {
+  uploading: "Subiendo...",
+  parsing: "Procesando...",
   loaded: "Cargado",
   unsupported: "No soportado",
   error: "Error",
 };
 
 const STATUS_CLASS: Record<DocumentItem["status"], string> = {
+  uploading: styles.statusUploading,
+  parsing: styles.statusParsing,
   loaded: styles.statusLoaded,
   unsupported: styles.statusUnsupported,
   error: styles.statusError,
@@ -17,17 +22,26 @@ const STATUS_CLASS: Record<DocumentItem["status"], string> = {
 
 interface MiEmpresaProps {
   documents: DocumentItem[];
-  isLoading: boolean;
-  isSupported: boolean;
-  onPickFolder: () => void;
+  isUploading: boolean;
+  onUploadFiles: (files: FileList) => void;
+  onDeleteDocument: (id: string) => void;
 }
 
 export function MiEmpresa({
   documents,
-  isLoading,
-  isSupported,
-  onPickFolder,
+  isUploading,
+  onUploadFiles,
+  onDeleteDocument,
 }: MiEmpresaProps) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    if (e.target.files && e.target.files.length > 0) {
+      onUploadFiles(e.target.files);
+    }
+    e.target.value = "";
+  }
+
   return (
     <div className={styles.page}>
       <h1 className={styles.title}>Mi empresa</h1>
@@ -39,25 +53,27 @@ export function MiEmpresa({
       <section className={styles.card}>
         <h2 className={styles.cardTitle}>Documentos</h2>
 
-        {!isSupported && (
-          <p className={styles.warning}>
-            Tu navegador no soporta seleccionar carpetas locales. Usa Chrome o
-            Edge para esta función.
-          </p>
-        )}
+        <input
+          ref={fileInputRef}
+          type="file"
+          multiple
+          accept=".pdf,.xlsx,.xls,.csv"
+          style={{ display: "none" }}
+          onChange={handleFileChange}
+        />
 
         <button
           className={styles.pickButton}
-          onClick={onPickFolder}
-          disabled={!isSupported || isLoading}
+          onClick={() => fileInputRef.current?.click()}
+          disabled={isUploading}
         >
-          {isLoading ? "Cargando..." : "Seleccionar carpeta"}
+          {isUploading ? "Subiendo..." : "Subir documentos"}
         </button>
 
         {documents.length === 0 ? (
           <p className={styles.emptyState}>
-            Aún no hay documentos. Selecciona una carpeta con PDFs o archivos
-            Excel/CSV.
+            Aún no hay documentos. Sube PDFs o archivos Excel/CSV de tu
+            empresa.
           </p>
         ) : (
           <ul className={styles.fileList}>
@@ -69,6 +85,14 @@ export function MiEmpresa({
                 <span className={STATUS_CLASS[doc.status]}>
                   {STATUS_LABEL[doc.status]}
                 </span>
+                <button
+                  className={styles.deleteButton}
+                  onClick={() => onDeleteDocument(doc.id)}
+                  title="Borrar documento"
+                  aria-label={`Borrar ${doc.name}`}
+                >
+                  ✕
+                </button>
               </li>
             ))}
           </ul>
