@@ -1,4 +1,9 @@
-export type DocumentStatus = "loaded" | "unsupported" | "error";
+export type DocumentStatus =
+  | "uploading"
+  | "parsing"
+  | "loaded"
+  | "unsupported"
+  | "error";
 
 export interface DocumentItem {
   id: string;
@@ -6,4 +11,5 @@ export interface DocumentItem {
   status: DocumentStatus;
   content?: string;
   error?: string;
+  storagePath?: string;
 }

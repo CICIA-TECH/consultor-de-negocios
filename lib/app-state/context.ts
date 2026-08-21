@@ -6,9 +6,9 @@ import type { DocumentItem } from "@/lib/documents/types";
 
 export interface AppStateValue {
   documents: DocumentItem[];
-  isLoadingFolder: boolean;
-  isSupported: boolean;
-  onPickFolder: () => void;
+  isUploading: boolean;
+  onUploadFiles: (files: FileList) => void;
+  onDeleteDocument: (id: string) => void;
   loadedDocsCount: number;
   messages: UIMessage[];
   isBusy: boolean;

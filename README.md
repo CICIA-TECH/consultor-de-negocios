@@ -70,7 +70,7 @@ A partir de este principio, estructuramos nuestro trabajo en:
 - **Despliegue:** Vercel.
 - **Tooling de desarrollo:** [Vercel Plugin para Claude Code](https://github.com/vercel/vercel-plugin) — da acceso a skills/comandos de Vercel (CLI, deploys, logs, storage) directamente dentro de Claude Code.
 
-*Nota: Supabase Auth (login por usuario) ya está conectado — ver [🔐 Autenticación](#-autenticación). El resto de Supabase (storage, persistencia de conversaciones) sigue reservado para issues posteriores de la Fase 2. La carga de documentos sigue leyendo desde una carpeta local del navegador hasta que se implemente el issue #11.*
+*Nota: Supabase Auth (login por usuario) y Supabase Storage (carga de documentos, issue #11) ya están conectados — ver [🔐 Autenticación](#-autenticación) y la sección de documentos más abajo. La persistencia de conversaciones sigue reservada para un issue posterior de la Fase 2.*
 
 ---
 
@@ -107,9 +107,9 @@ A partir de este principio, estructuramos nuestro trabajo en:
    ```bash
    npm run dev
    ```
-   Abrir [http://localhost:3000](http://localhost:3000) en **Chrome o Edge** (la selección de carpeta usa la File System Access API, no soportada en Firefox/Safari).
+   Abrir [http://localhost:3000](http://localhost:3000) — funciona en cualquier navegador moderno (la carga de documentos ya no depende de la File System Access API, ver issue #11).
 
-4. **Usar el MVP:** Haz click en "Seleccionar carpeta", elige una carpeta local con PDFs o archivos Excel/CSV, y escribe tus preguntas. La IA analizará el contexto usando el modelo `gpt-oss-120b` de Cerebras.
+4. **Usar el MVP:** Haz click en "Subir documentos" (sección "Mi empresa"), elige uno o varios PDFs/Excel/CSV, y escribe tus preguntas. La IA analizará el contexto usando el modelo `gpt-oss-120b` de Cerebras (o Groq, ver más abajo).
 
 ### Vercel Plugin para Claude Code (opcional)
 
@@ -371,6 +371,21 @@ Notas:
 - `@ai-sdk/groq` está pineado a `3.0.60` (tag `ai-v6` en npm), no a `latest` — la versión `latest` (4.x) usa una spec de proveedor (`LanguageModelV4`) incompatible con `ai@6`, que usa este proyecto.
 - Actualmente activado en Vercel para **Production** y **Development** (no en Preview).
 - Ver el ⚠️ de trabajo futuro arriba: mientras está activo Groq, `estimated_cost_usd` en `usage_log` sigue calculado con pricing de Cerebras, no el real de Groq.
+
+---
+
+## 📁 Subida de documentos (issue #11)
+
+Reemplaza la selección de carpeta local (File System Access API, solo Chrome/Edge, no persistía) por subida a **Supabase Storage**, con parseo server-side y persistencia por usuario.
+
+- **Bucket:** `documents` (privado). Cada archivo vive en `{user_id}/{uuid}-{nombre-original}`, protegido por políticas RLS en `storage.objects` que solo dejan a cada usuario leer/subir/borrar dentro de su propia carpeta (`supabase/migrations/..._add_documents_storage.sql`). Límite de 20MB por archivo y `allowed_mime_types` restringido a PDF/Excel/CSV a nivel de bucket.
+- **Metadata:** tabla `public.documents` (`user_id`, `storage_path`, `file_name`, `status`, `content`, `error_message`, `size_bytes`), con la misma RLS por `user_id` que `usage_log`/`usage_daily`.
+- **Flujo de subida** (`lib/documents/uploadDocuments.ts`, client-side): sube el archivo a Storage → inserta la fila en `documents` (`status: uploaded`) → llama a `POST /api/documents/parse` → el estado va pasando `uploaded → parsing → loaded` (o `error`) y se refleja en la UI de "Mi empresa" en tiempo real.
+- **Parseo server-side:** `app/api/documents/parse/route.ts` (runtime Node, no Edge) descarga el archivo de Storage y corre `parseDocument()` (`lib/documents/parse.ts`, reutilizada tal cual, antes corría en el navegador). Para PDFs usa el build `pdfjs-dist/legacy/build/pdf.mjs` (compatible con Node, sin worker real) — requiere `standardFontDataUrl` apuntando a `node_modules/pdfjs-dist/standard_fonts` vía `process.cwd()` (no `import.meta.url`, que no sobrevive el bundling de la API route), y `outputFileTracingIncludes` en `next.config.ts` para que Vercel empaquete esa carpeta en la función serverless.
+- **Persistencia:** `AppShell.tsx` carga los documentos del usuario (`fetchDocuments()`) al montar — es lo que hace que sobrevivan a un refresh o a volver a entrar, a diferencia del picker de carpeta anterior.
+- **Borrado:** botón por documento en "Mi empresa" — borra el objeto de Storage y la fila de `documents` (`deleteDocument()`).
+
+⚠️ **Trabajo futuro:** no hay cuota de almacenamiento total por usuario (solo límite de 20MB por archivo), y no se puede reprocesar un documento ya subido (hay que borrarlo y volver a subirlo).
 
 ---
 

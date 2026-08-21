@@ -11,14 +11,23 @@ export function isSupportedFile(fileName: string): boolean {
 }
 
 async function parsePdf(file: File): Promise<string> {
-  const pdfjsLib = await import("pdfjs-dist");
-  pdfjsLib.GlobalWorkerOptions.workerSrc = new URL(
-    "pdfjs-dist/build/pdf.worker.min.mjs",
-    import.meta.url,
-  ).toString();
+  // Build "legacy" (Node-compatible): sin worker real, corre en el mismo
+  // proceso. Este módulo corre server-side (API route), no en el navegador.
+  const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+  const path = await import("path");
+
+  // Sin esto, pdf.js no encuentra las fuentes estándar (Helvetica, etc.) en
+  // PDFs que no embeben su propia fuente, y puede devolver texto incompleto.
+  // process.cwd() (no import.meta.url) porque Next.js reubica este archivo
+  // al bundlear la API route — el path relativo al source no sobrevive eso.
+  const standardFontDataUrl =
+    path.join(process.cwd(), "node_modules/pdfjs-dist/standard_fonts") + "/";
 
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pdf = await pdfjsLib.getDocument({
+    data: arrayBuffer,
+    standardFontDataUrl,
+  }).promise;
 
   const pageTexts: string[] = [];
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
