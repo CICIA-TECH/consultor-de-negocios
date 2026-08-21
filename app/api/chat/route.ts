@@ -2,7 +2,7 @@ import { cerebras } from "@ai-sdk/cerebras";
 import { streamText, convertToModelMessages, tool } from "ai";
 import { z } from "zod";
 import { createClient } from "@/lib/supabase/server";
-import { DAILY_MESSAGE_LIMIT, DAILY_LIMIT_MARKER } from "@/lib/quota";
+import { DAILY_MESSAGE_LIMIT, DAILY_LIMIT_MARKER, estimateCostUsd } from "@/lib/quota";
 
 export const maxDuration = 30;
 
@@ -144,6 +144,21 @@ Responde siempre en español. Sé profesional, directo y práctico.`;
           return `Gráfico "${input.title}" (${input.type}) generado con ${input.data.length} puntos de datos.`;
         },
       }),
+    },
+    onFinish: async ({ usage }) => {
+      const inputTokens = usage.inputTokens ?? 0;
+      const outputTokens = usage.outputTokens ?? 0;
+      const { error: usageLogError } = await supabase.from("usage_log").insert({
+        user_id: user.id,
+        input_tokens: inputTokens,
+        output_tokens: outputTokens,
+        total_tokens: usage.totalTokens ?? inputTokens + outputTokens,
+        estimated_cost_usd: estimateCostUsd(inputTokens, outputTokens),
+      });
+
+      if (usageLogError) {
+        console.error("Error al registrar trazabilidad de uso:", usageLogError);
+      }
     },
   });
 
