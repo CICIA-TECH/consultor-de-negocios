@@ -37,9 +37,13 @@ export async function uploadDocument(
   } = await supabase.auth.getUser();
   if (!user) return;
 
-  const storagePath = `${user.id}/${crypto.randomUUID()}-${file.name}`;
+  // Un solo id generado acá, usado de punta a punta (path en Storage, fila
+  // en `documents`, y como key de React) para que cada actualización de
+  // estado reemplace la misma fila en vez de crear una nueva.
+  const documentId = crypto.randomUUID();
+  const storagePath = `${user.id}/${documentId}-${file.name}`;
 
-  onUpdate({ id: storagePath, name: file.name, status: "uploading", storagePath });
+  onUpdate({ id: documentId, name: file.name, status: "uploading", storagePath });
 
   const { error: uploadError } = await supabase.storage
     .from("documents")
@@ -47,7 +51,7 @@ export async function uploadDocument(
 
   if (uploadError) {
     onUpdate({
-      id: storagePath,
+      id: documentId,
       name: file.name,
       status: "error",
       error: uploadError.message,
@@ -56,51 +60,48 @@ export async function uploadDocument(
     return;
   }
 
-  const { data: row, error: insertError } = await supabase
-    .from("documents")
-    .insert({
-      user_id: user.id,
-      storage_path: storagePath,
-      file_name: file.name,
-      size_bytes: file.size,
-    })
-    .select("id")
-    .single();
+  const { error: insertError } = await supabase.from("documents").insert({
+    id: documentId,
+    user_id: user.id,
+    storage_path: storagePath,
+    file_name: file.name,
+    size_bytes: file.size,
+  });
 
-  if (insertError || !row) {
+  if (insertError) {
     onUpdate({
-      id: storagePath,
+      id: documentId,
       name: file.name,
       status: "error",
-      error: insertError?.message ?? "No se pudo registrar el documento",
+      error: insertError.message,
       storagePath,
     });
     return;
   }
 
-  onUpdate({ id: row.id, name: file.name, status: "parsing", storagePath });
+  onUpdate({ id: documentId, name: file.name, status: "parsing", storagePath });
 
   try {
     const res = await fetch("/api/documents/parse", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ documentId: row.id }),
+      body: JSON.stringify({ documentId }),
     });
 
     if (!res.ok) {
       const message = await res.text();
-      onUpdate({ id: row.id, name: file.name, status: "error", error: message, storagePath });
+      onUpdate({ id: documentId, name: file.name, status: "error", error: message, storagePath });
       return;
     }
 
     const { data: updated } = await supabase
       .from("documents")
       .select("content")
-      .eq("id", row.id)
+      .eq("id", documentId)
       .single();
 
     onUpdate({
-      id: row.id,
+      id: documentId,
       name: file.name,
       status: "loaded",
       content: updated?.content ?? undefined,
@@ -108,7 +109,7 @@ export async function uploadDocument(
     });
   } catch (error) {
     onUpdate({
-      id: row.id,
+      id: documentId,
       name: file.name,
       status: "error",
       error: error instanceof Error ? error.message : "Error desconocido",

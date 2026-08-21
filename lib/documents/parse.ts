@@ -7,32 +7,13 @@ function getExtension(fileName: string): string {
 async function parsePdf(file: File): Promise<string> {
   // Build "legacy" (Node-compatible): sin worker real, corre en el mismo
   // proceso. Este módulo corre server-side (API route), no en el navegador.
+  // pdf.js resuelve su worker y sus fuentes estándar con paths relativos a
+  // sí mismo — necesita correr "tal cual" desde node_modules (ver
+  // serverExternalPackages en next.config.ts), sin overrides manuales.
   const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
-  const path = await import("path");
-
-  // process.cwd() (no import.meta.url) porque Next.js/Turbopack reubica este
-  // archivo al bundlear la API route — un path relativo al source no
-  // sobrevive eso.
-  //
-  // Sin standardFontDataUrl, pdf.js no encuentra las fuentes estándar
-  // (Helvetica, etc.) en PDFs que no embeben su propia fuente.
-  //
-  // Sin workerSrc explícito, pdf.js intenta resolver su "fake worker"
-  // (ejecutar el worker inline, sin thread real) con un import relativo a
-  // su propio chunk bundleado, que Turbopack rompe — falla con
-  // "Setting up fake worker failed: Cannot find module ...pdf.worker.mjs".
-  const standardFontDataUrl =
-    path.join(process.cwd(), "node_modules/pdfjs-dist/standard_fonts") + "/";
-  pdfjsLib.GlobalWorkerOptions.workerSrc = path.join(
-    process.cwd(),
-    "node_modules/pdfjs-dist/legacy/build/pdf.worker.mjs",
-  );
 
   const arrayBuffer = await file.arrayBuffer();
-  const pdf = await pdfjsLib.getDocument({
-    data: arrayBuffer,
-    standardFontDataUrl,
-  }).promise;
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
 
   const pageTexts: string[] = [];
   for (let pageNumber = 1; pageNumber <= pdf.numPages; pageNumber++) {
