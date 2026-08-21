@@ -1,0 +1,116 @@
+<!--
+  Plantilla de "Confirm signup" para Supabase Auth.
+  Pegar tal cual en: Dashboard → Authentication → Emails → Templates → Confirm signup.
+  Variable requerida: {{ .ConfirmationURL }} (la inyecta Supabase).
+-->
+<!DOCTYPE html>
+<html lang="es" xmlns="http://www.w3.org/1999/xhtml" xmlns:v="urn:schemas-microsoft-com:vml" xmlns:o="urn:schemas-microsoft-com:office:office">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<title>Confirma tu correo — CICIA</title>
+<!--[if mso]>
+<noscript>
+<xml>
+<o:OfficeDocumentSettings>
+<o:PixelsPerInch>96</o:PixelsPerInch>
+</o:OfficeDocumentSettings>
+</xml>
+</noscript>
+<![endif]-->
+<style>
+  body, table, td { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  body { margin: 0; padding: 0; width: 100% !important; background-color: #F2F4FF; }
+  img { border: 0; line-height: 100%; outline: none; text-decoration: none; -ms-interpolation-mode: bicubic; }
+  a { text-decoration: none; }
+  @media screen and (max-width: 480px) {
+    .container { width: 100% !important; }
+    .px { padding-left: 24px !important; padding-right: 24px !important; }
+  }
+</style>
+</head>
+<body style="margin:0; padding:0; background-color:#F2F4FF;">
+  <!-- Preheader (oculto, aparece como preview en la bandeja) -->
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0;">
+    Confirma tu correo para activar tu cuenta en CICIA.
+  </div>
+
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#F2F4FF;">
+    <tr>
+      <td align="center" style="padding: 40px 16px;">
+
+        <table role="presentation" class="container" width="480" cellpadding="0" cellspacing="0" style="width:480px; max-width:480px; background-color:#FFFFFF; border-radius:16px; overflow:hidden; border:1px solid #D8DCFF;">
+
+          <!-- Franja de acento -->
+          <tr>
+            <td style="height:6px; line-height:6px; font-size:0; background-color:#3A5BF3; background-image:linear-gradient(90deg, #3A5BF3 0%, #9546F3 100%);">&nbsp;</td>
+          </tr>
+
+          <!-- Logo -->
+          <tr>
+            <td class="px" align="center" style="padding: 40px 40px 8px 40px;">
+              <img src="https://cicia.xyz/cicia-logo.png" width="132" alt="CICIA" style="display:block; width:132px; max-width:132px; height:auto;" />
+            </td>
+          </tr>
+
+          <!-- Contenido -->
+          <tr>
+            <td class="px" align="center" style="padding: 24px 40px 8px 40px;">
+              <h1 style="margin:0; font-size:22px; line-height:30px; font-weight:700; color:#0B0F19;">
+                Confirma tu correo
+              </h1>
+            </td>
+          </tr>
+          <tr>
+            <td class="px" align="center" style="padding: 0 40px 32px 40px;">
+              <p style="margin:0; font-size:15px; line-height:24px; color:#2E3568;">
+                Creaste una cuenta en <strong>CICIA</strong>, tu consultor de negocios con IA. Confirma tu correo para activarla y empezar a usarla.
+              </p>
+            </td>
+          </tr>
+
+          <!-- Botón CTA -->
+          <tr>
+            <td align="center" style="padding: 0 40px 36px 40px;">
+              <!--[if mso]>
+              <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{ .ConfirmationURL }}" style="height:48px;v-text-anchor:middle;width:280px;" arcsize="16%" fillcolor="#3A5BF3" stroke="f">
+              <w:anchorlock/>
+              <center style="color:#FFFFFF;font-family:sans-serif;font-size:15px;font-weight:bold;">Confirmar mi correo</center>
+              </v:roundrect>
+              <![endif]-->
+              <!--[if !mso]><!-->
+              <a href="{{ .ConfirmationURL }}" target="_blank" style="display:inline-block; padding:14px 32px; border-radius:10px; background-color:#3A5BF3; background-image:linear-gradient(90deg, #3A5BF3 0%, #9546F3 100%); color:#FFFFFF; font-size:15px; font-weight:700; line-height:20px;">
+                Confirmar mi correo
+              </a>
+              <!--<![endif]-->
+            </td>
+          </tr>
+
+          <!-- Link de respaldo -->
+          <tr>
+            <td class="px" align="center" style="padding: 0 40px 40px 40px;">
+              <p style="margin:0; font-size:12px; line-height:18px; color:#6B74A0;">
+                Si el botón no funciona, copia y pega este link en tu navegador:<br />
+                <a href="{{ .ConfirmationURL }}" target="_blank" style="color:#3A5BF3; word-break:break-all;">{{ .ConfirmationURL }}</a>
+              </p>
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td style="padding: 20px 40px; background-color:#F2F4FF; border-top:1px solid #D8DCFF;">
+              <p style="margin:0; font-size:12px; line-height:18px; color:#6B74A0; text-align:center;">
+                Si no creaste esta cuenta, puedes ignorar este correo.<br />
+                CICIA — Consultor de Negocios
+              </p>
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+  </table>
+</body>
+</html>
