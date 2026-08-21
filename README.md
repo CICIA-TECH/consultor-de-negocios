@@ -337,6 +337,7 @@ Además del conteo diario (arriba), cada llamada a la IA queda registrada en det
 
 - **Registro por request:** en el callback `onFinish` de `streamText` (`app/api/chat/route.ts`), se inserta una fila en `usage_log` (`supabase/migrations/..._add_usage_log.sql`) con `user_id`, `input_tokens`, `output_tokens`, `total_tokens` y `estimated_cost_usd`.
 - **Costo aproximado:** calculado en `estimateCostUsd()` (`lib/quota.ts`) usando el precio publicado de `gpt-oss-120b` en Cerebras (por millón de tokens) — son valores hardcodeados que hay que revisar si Cerebras cambia su pricing.
+  - ⚠️ **Trabajo futuro:** el cálculo asume siempre pricing de Cerebras, aunque el proveedor activo sea otro (ver `AI_PROVIDER` abajo). Mientras se usa Groq, `estimated_cost_usd` no refleja el costo real — falta parametrizar `estimateCostUsd()` por proveedor.
 - **Fail-open:** igual que la cuota diaria, un error al registrar no bloquea la respuesta al usuario, solo se loguea.
 - **Reporte interno:** la vista `public.usage_by_user` agrega `usage_log` por usuario (cantidad de requests, tokens totales, costo total). Se consulta desde el SQL Editor de Supabase con el rol `postgres` (no hay UI todavía) — RLS solo deja a cada usuario ver su propia fila, así que el reporte agregado de todos los usuarios requiere bypassear RLS con ese rol.
 
@@ -356,7 +357,20 @@ También se puede correr desde el CLI local, sin entrar al dashboard:
 supabase db query --linked "select * from public.usage_by_user order by total_estimated_cost_usd desc;"
 ```
 
-**Estado de la verificación:** el schema (tabla, RLS, vista) se probó manualmente insertando y luego borrando una fila de prueba directo en la base — inserta y agrega bien. La prueba end-to-end real (mandar un mensaje por el chat y confirmar que `onFinish` lo registre solo) quedó pendiente porque la cuenta de Cerebras usada en producción está bloqueada por billing (`Payment required`) — no es un problema de este código, hay que resolverlo en el dashboard de Cerebras antes de poder confirmarlo con tráfico real.
+**Estado de la verificación:** verificado end-to-end en producción — schema (tabla, RLS, vista) probado manualmente y confirmado con tráfico real de chat, que quedó registrado correctamente en `usage_log`.
+
+### Proveedor de IA alternativo (Groq)
+
+La cuenta de Cerebras usada en producción quedó bloqueada por billing (`Payment required`). Como fallback temporal, `app/api/chat/route.ts` permite elegir el proveedor vía variable de entorno:
+
+- `AI_PROVIDER=groq` + `GROQ_API_KEY` → usa Groq (`openai/gpt-oss-120b`, free tier).
+- Cualquier otro valor (o sin setear) → usa Cerebras (comportamiento original).
+
+Notas:
+
+- `@ai-sdk/groq` está pineado a `3.0.60` (tag `ai-v6` en npm), no a `latest` — la versión `latest` (4.x) usa una spec de proveedor (`LanguageModelV4`) incompatible con `ai@6`, que usa este proyecto.
+- Actualmente activado en Vercel para **Production** y **Development** (no en Preview).
+- Ver el ⚠️ de trabajo futuro arriba: mientras está activo Groq, `estimated_cost_usd` en `usage_log` sigue calculado con pricing de Cerebras, no el real de Groq.
 
 ---
 
