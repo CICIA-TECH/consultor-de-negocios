@@ -1,5 +1,5 @@
 import { createClient } from "@/lib/supabase/client";
-import { isSupportedFile } from "./parse";
+import { isSupportedFile } from "./supportedFiles";
 import type { DocumentItem } from "./types";
 
 export async function fetchDocuments(): Promise<DocumentItem[]> {
