@@ -331,6 +331,33 @@ Además del rate-limit de Cerebras (arriba), hay un límite propio de la app: **
 - **UI:** `ChatPanel.tsx` detecta ese marcador en `error.message` (mismo mecanismo que la detección de rate-limit de Cerebras, ver arriba) y muestra un banner distinto: "Límite diario alcanzado".
 - **Fail-open:** si la función de Postgres falla inesperadamente, la request no se bloquea (solo se loguea el error) — se prioriza no cortarle el acceso a un usuario legítimo por un problema de infraestructura.
 
+### Trazabilidad de uso/costos por usuario (issue #10)
+
+Además del conteo diario (arriba), cada llamada a la IA queda registrada en detalle para poder ver consumo y costo aproximado por usuario.
+
+- **Registro por request:** en el callback `onFinish` de `streamText` (`app/api/chat/route.ts`), se inserta una fila en `usage_log` (`supabase/migrations/..._add_usage_log.sql`) con `user_id`, `input_tokens`, `output_tokens`, `total_tokens` y `estimated_cost_usd`.
+- **Costo aproximado:** calculado en `estimateCostUsd()` (`lib/quota.ts`) usando el precio publicado de `gpt-oss-120b` en Cerebras (por millón de tokens) — son valores hardcodeados que hay que revisar si Cerebras cambia su pricing.
+- **Fail-open:** igual que la cuota diaria, un error al registrar no bloquea la respuesta al usuario, solo se loguea.
+- **Reporte interno:** la vista `public.usage_by_user` agrega `usage_log` por usuario (cantidad de requests, tokens totales, costo total). Se consulta desde el SQL Editor de Supabase con el rol `postgres` (no hay UI todavía) — RLS solo deja a cada usuario ver su propia fila, así que el reporte agregado de todos los usuarios requiere bypassear RLS con ese rol.
+
+**Cómo consultar el consumo:**
+
+```sql
+-- Detalle por request
+select * from public.usage_log order by created_at desc;
+
+-- Agregado por usuario
+select * from public.usage_by_user order by total_estimated_cost_usd desc;
+```
+
+También se puede correr desde el CLI local, sin entrar al dashboard:
+
+```
+supabase db query --linked "select * from public.usage_by_user order by total_estimated_cost_usd desc;"
+```
+
+**Estado de la verificación:** el schema (tabla, RLS, vista) se probó manualmente insertando y luego borrando una fila de prueba directo en la base — inserta y agrega bien. La prueba end-to-end real (mandar un mensaje por el chat y confirmar que `onFinish` lo registre solo) quedó pendiente porque la cuenta de Cerebras usada en producción está bloqueada por billing (`Payment required`) — no es un problema de este código, hay que resolverlo en el dashboard de Cerebras antes de poder confirmarlo con tráfico real.
+
 ---
 
 ## ✍️ Visualización y Streaming de Respuestas (Typewriter & Auto-scroll)
